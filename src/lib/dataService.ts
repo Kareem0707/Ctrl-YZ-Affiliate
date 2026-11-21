@@ -1,0 +1,519 @@
+import {
+  Product,
+  Marketer,
+  Order,
+  OrderStatus,
+  WithdrawalRequest,
+  GovernorateShipping,
+  PlatformSettings,
+} from './types';
+import {
+  INITIAL_PRODUCTS,
+  INITIAL_MARKETERS,
+  INITIAL_ORDERS,
+  INITIAL_WITHDRAWALS,
+  INITIAL_GOVERNORATES,
+  INITIAL_SETTINGS,
+} from './mockData';
+
+const KEYS = {
+  PRODUCTS: 'ctrl_yz_products',
+  ORDERS: 'ctrl_yz_orders',
+  MARKETERS: 'ctrl_yz_marketers',
+  WITHDRAWALS: 'ctrl_yz_withdrawals',
+  GOVERNORATES: 'ctrl_yz_governorates',
+  SETTINGS: 'ctrl_yz_settings',
+  CATALOG_VERSION: 'ctrl_yz_catalog_version',
+};
+
+const CURRENT_CATALOG_VERSION = 'v5_logo_and_brand_campaign';
+
+function checkCatalogVersion(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const current = localStorage.getItem(KEYS.CATALOG_VERSION);
+    if (current !== CURRENT_CATALOG_VERSION) {
+      localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+      localStorage.setItem(KEYS.ORDERS, JSON.stringify(INITIAL_ORDERS));
+      localStorage.setItem(KEYS.CATALOG_VERSION, CURRENT_CATALOG_VERSION);
+    }
+  } catch (e) {
+    console.error('Error verifying catalog version:', e);
+  }
+}
+
+function getStorageItem<T>(key: string, defaultValue: T): T {
+  if (typeof window === 'undefined') return defaultValue;
+  try {
+    checkCatalogVersion();
+    const item = localStorage.getItem(key);
+    if (!item) {
+      localStorage.setItem(key, JSON.stringify(defaultValue));
+      return defaultValue;
+    }
+    return JSON.parse(item) as T;
+  } catch (e) {
+    console.error(`Error reading ${key} from storage:`, e);
+    return defaultValue;
+  }
+}
+
+function setStorageItem<T>(key: string, value: T): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    window.dispatchEvent(new CustomEvent('affiliate_data_changed', { detail: { key } }));
+  } catch (e) {
+    console.error(`Error writing ${key} to storage:`, e);
+  }
+}
+
+export function generateOrderNumber(): string {
+  const digits = Math.floor(10000 + Math.random() * 90000);
+  return `ORD-${digits}`;
+}
+
+export function generateWithdrawalId(): string {
+  const digits = Math.floor(1000 + Math.random() * 9000);
+  return `WD-${digits}`;
+}
+
+// ─── Products API ─────────────────────────────────────────────
+
+export async function getProducts(): Promise<Product[]> {
+  return getStorageItem<Product[]>(KEYS.PRODUCTS, INITIAL_PRODUCTS);
+}
+
+export async function getProductById(id: string): Promise<Product | null> {
+  const products = await getProducts();
+  return products.find((p) => p.id === id) || null;
+}
+
+export async function saveProduct(productData: Partial<Product>): Promise<Product> {
+  const products = await getProducts();
+  const now = new Date().toISOString();
+
+  if (productData.id) {
+    const index = products.findIndex((p) => p.id === productData.id);
+    if (index > -1) {
+      const updated: Product = {
+        ...products[index],
+        ...productData,
+        updatedAt: now,
+      };
+      products[index] = updated;
+      setStorageItem(KEYS.PRODUCTS, products);
+      return updated;
+    }
+  }
+
+  const newProduct: Product = {
+    id: `prod-${Date.now().toString(36)}`,
+    name_en: productData.name_en || 'New Product',
+    name_ar: productData.name_ar || 'منتج جديد',
+    brand: productData.brand || 'Ctrl YZ',
+    category: productData.category || 'Hoodies',
+    costPrice: Number(productData.costPrice || 200),
+    wholesalePrice: Number(productData.wholesalePrice || 300),
+    suggestedPrice: Number(productData.suggestedPrice || 500),
+    minPrice: Number(productData.minPrice || 450),
+    price: Number(productData.suggestedPrice || 500),
+    salePrice: productData.salePrice ? Number(productData.salePrice) : undefined,
+    commission: Number(productData.commission || (Number(productData.suggestedPrice || 500) - Number(productData.wholesalePrice || 300))),
+    description_en: productData.description_en || '',
+    description_ar: productData.description_ar || '',
+    images: productData.images && productData.images.length > 0 ? productData.images : ['/products/06f6580b-e809-4fb1-a16b-b668d10ab5a8.jfif'],
+    marketingDriveUrl: productData.marketingDriveUrl || '',
+    adCopies: productData.adCopies || [],
+    sizes: productData.sizes && productData.sizes.length > 0 ? productData.sizes : ['M', 'L', 'XL'],
+    colors: productData.colors && productData.colors.length > 0 ? productData.colors : [{ name: 'Black', hex: '#111827' }],
+    stock: Number(productData.stock ?? 50),
+    isActive: productData.isActive !== false,
+    isFeatured: Boolean(productData.isFeatured),
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  products.unshift(newProduct);
+  setStorageItem(KEYS.PRODUCTS, products);
+  return newProduct;
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  const products = await getProducts();
+  const filtered = products.filter((p) => p.id !== id);
+  setStorageItem(KEYS.PRODUCTS, filtered);
+}
+
+// ─── Orders API ───────────────────────────────────────────────
+
+export async function getOrders(): Promise<Order[]> {
+  return getStorageItem<Order[]>(KEYS.ORDERS, INITIAL_ORDERS);
+}
+
+export async function getOrderById(id: string): Promise<Order | null> {
+  const orders = await getOrders();
+  return orders.find((o) => o.id === id) || null;
+}
+
+export async function getOrderByNumber(orderNumber: string): Promise<Order | null> {
+  const orders = await getOrders();
+  const cleaned = orderNumber.trim().toUpperCase();
+  return orders.find((o) => o.orderNumber.toUpperCase() === cleaned) || null;
+}
+
+export async function getOrdersByAffiliate(affiliateId: string): Promise<Order[]> {
+  const orders = await getOrders();
+  return orders.filter((o) => o.affiliateId === affiliateId);
+}
+
+export async function createOrder(data: Partial<Order>): Promise<Order> {
+  const orders = await getOrders();
+  const now = new Date().toISOString();
+  const orderNumber = generateOrderNumber();
+
+  const items = data.items || [];
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const wholesaleTotal = items.reduce((sum, item) => sum + (item.wholesalePrice || 0) * item.quantity, 0);
+  const affiliateCommission = items.reduce((sum, item) => sum + (item.commission || (item.price - item.wholesalePrice)) * item.quantity, 0);
+  const shippingFee = Number(data.shippingFee ?? 45);
+  const totalAmount = subtotal + shippingFee;
+  const platformProfit = Math.max(0, wholesaleTotal - (items.length * 150)); // Estimated wholesale margin
+
+  const newOrder: Order = {
+    id: `ord-${Date.now().toString(36)}`,
+    orderNumber,
+    affiliateId: data.affiliateId,
+    affiliateName: data.affiliateName,
+    affiliatePhone: data.affiliatePhone,
+    customerName: data.customerName || '',
+    customerPhone: data.customerPhone || '',
+    customerPhone2: data.customerPhone2 || '',
+    governorate: data.governorate || 'القاهرة',
+    customerCity: data.customerCity || '',
+    customerAddress: data.customerAddress || '',
+    notes: data.notes || '',
+    items,
+    subtotal,
+    shippingFee,
+    totalAmount,
+    wholesaleTotal,
+    affiliateCommission,
+    platformProfit,
+    status: 'pending',
+    shippingCompany: data.shippingCompany,
+    trackingNumber: data.trackingNumber,
+    statusNotes: 'تم إنشاء الطلب بنجاح وهو قيد المراجعة',
+    statusHistory: [
+      { status: 'pending', timestamp: now, note: 'تم تسجيل الطلب في النظام' },
+    ],
+    isCommissionPaid: false,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  orders.unshift(newOrder);
+  setStorageItem(KEYS.ORDERS, orders);
+
+  // If order was created by a registered affiliate, update their pending balance and orders count
+  if (data.affiliateId) {
+    const marketers = await getMarketers();
+    const marketer = marketers.find((m) => m.id === data.affiliateId || m.uid === data.affiliateId);
+    if (marketer) {
+      marketer.pendingBalance += affiliateCommission;
+      marketer.ordersCount += 1;
+      setStorageItem(KEYS.MARKETERS, marketers);
+    }
+  }
+
+  // Deduct stock from products
+  const products = await getProducts();
+  items.forEach((item) => {
+    const prod = products.find((p) => p.id === item.productId);
+    if (prod) {
+      prod.stock = Math.max(0, prod.stock - item.quantity);
+    }
+  });
+  setStorageItem(KEYS.PRODUCTS, products);
+
+  return newOrder;
+}
+
+export async function updateOrderStatus(
+  orderId: string,
+  newStatus: OrderStatus,
+  options?: { shippingCompany?: string; trackingNumber?: string; note?: string }
+): Promise<Order> {
+  const orders = await getOrders();
+  const index = orders.findIndex((o) => o.id === orderId);
+  if (index === -1) throw new Error('Order not found');
+
+  const order = orders[index];
+  const previousStatus = order.status;
+  const now = new Date().toISOString();
+
+  order.status = newStatus;
+  order.updatedAt = now;
+  if (options?.shippingCompany) order.shippingCompany = options.shippingCompany;
+  if (options?.trackingNumber) order.trackingNumber = options.trackingNumber;
+  if (options?.note) order.statusNotes = options.note;
+
+  if (!order.statusHistory) {
+    order.statusHistory = [];
+  }
+  order.statusHistory.push({
+    status: newStatus,
+    timestamp: now,
+    note: options?.note || `تم تغيير الحالة إلى ${newStatus}`,
+  });
+
+  // Commission balance logic:
+  // When an order transitions to 'delivered', move affiliateCommission from pending to walletBalance!
+  if (newStatus === 'delivered' && !order.isCommissionPaid && order.affiliateId) {
+    order.isCommissionPaid = true;
+    const marketers = await getMarketers();
+    const marketer = marketers.find((m) => m.id === order.affiliateId || m.uid === order.affiliateId);
+    if (marketer) {
+      marketer.pendingBalance = Math.max(0, marketer.pendingBalance - order.affiliateCommission);
+      marketer.walletBalance += order.affiliateCommission;
+      marketer.totalEarned += order.affiliateCommission;
+      marketer.deliveredCount += 1;
+      marketer.deliveryRate = Math.round((marketer.deliveredCount / Math.max(1, marketer.ordersCount)) * 100);
+      setStorageItem(KEYS.MARKETERS, marketers);
+    }
+  }
+
+  // If order was returned or cancelled, remove from pending balance
+  if ((newStatus === 'returned' || newStatus === 'cancelled') && previousStatus !== 'returned' && previousStatus !== 'cancelled') {
+    if (order.affiliateId && !order.isCommissionPaid) {
+      const marketers = await getMarketers();
+      const marketer = marketers.find((m) => m.id === order.affiliateId || m.uid === order.affiliateId);
+      if (marketer) {
+        marketer.pendingBalance = Math.max(0, marketer.pendingBalance - order.affiliateCommission);
+        marketer.deliveryRate = Math.round((marketer.deliveredCount / Math.max(1, marketer.ordersCount)) * 100);
+        setStorageItem(KEYS.MARKETERS, marketers);
+      }
+    }
+  }
+
+  orders[index] = order;
+  setStorageItem(KEYS.ORDERS, orders);
+  return order;
+}
+
+export async function deleteOrder(id: string): Promise<void> {
+  const orders = await getOrders();
+  setStorageItem(KEYS.ORDERS, orders.filter((o) => o.id !== id));
+}
+
+// ─── Marketers API ────────────────────────────────────────────
+
+export async function getMarketers(): Promise<Marketer[]> {
+  return getStorageItem<Marketer[]>(KEYS.MARKETERS, INITIAL_MARKETERS);
+}
+
+export async function getMarketerById(id: string): Promise<Marketer | null> {
+  const marketers = await getMarketers();
+  return marketers.find((m) => m.id === id || m.uid === id) || null;
+}
+
+export async function getMarketerByCode(code: string): Promise<Marketer | null> {
+  const marketers = await getMarketers();
+  const cleaned = code.trim().toLowerCase();
+  return marketers.find((m) => m.affiliateCode.toLowerCase() === cleaned) || null;
+}
+
+export async function saveMarketer(data: Partial<Marketer>): Promise<Marketer> {
+  const marketers = await getMarketers();
+  const now = new Date().toISOString();
+
+  if (data.id) {
+    const idx = marketers.findIndex((m) => m.id === data.id);
+    if (idx > -1) {
+      const updated: Marketer = { ...marketers[idx], ...data };
+      marketers[idx] = updated;
+      setStorageItem(KEYS.MARKETERS, marketers);
+      return updated;
+    }
+  }
+
+  const newMarketer: Marketer = {
+    id: `marketer-${Date.now().toString(36)}`,
+    uid: data.uid || `user-${Date.now()}`,
+    name: data.name || 'مسوق جديد',
+    email: data.email || 'marketer@example.com',
+    phone: data.phone || '',
+    whatsapp: data.whatsapp || data.phone || '',
+    affiliateCode: (data.affiliateCode || `AFF-${Math.floor(100 + Math.random() * 900)}`).toUpperCase(),
+    walletBalance: 0,
+    pendingBalance: 0,
+    totalEarned: 0,
+    totalWithdrawn: 0,
+    ordersCount: 0,
+    deliveredCount: 0,
+    deliveryRate: 100,
+    status: 'active',
+    payoutInfo: data.payoutInfo || {
+      method: 'vodafone_cash',
+      accountNumber: data.phone || '',
+      accountHolderName: data.name || '',
+    },
+    createdAt: now,
+  };
+
+  marketers.unshift(newMarketer);
+  setStorageItem(KEYS.MARKETERS, marketers);
+  return newMarketer;
+}
+
+export async function toggleMarketerStatus(id: string): Promise<Marketer> {
+  const marketers = await getMarketers();
+  const marketer = marketers.find((m) => m.id === id);
+  if (!marketer) throw new Error('Marketer not found');
+  marketer.status = marketer.status === 'active' ? 'suspended' : 'active';
+  setStorageItem(KEYS.MARKETERS, marketers);
+  return marketer;
+}
+
+// ─── Withdrawals API ──────────────────────────────────────────
+
+export async function getWithdrawals(): Promise<WithdrawalRequest[]> {
+  return getStorageItem<WithdrawalRequest[]>(KEYS.WITHDRAWALS, INITIAL_WITHDRAWALS);
+}
+
+export async function getWithdrawalsByMarketer(marketerId: string): Promise<WithdrawalRequest[]> {
+  const withdrawals = await getWithdrawals();
+  return withdrawals.filter((w) => w.marketerId === marketerId);
+}
+
+export async function createWithdrawalRequest(
+  data: Omit<WithdrawalRequest, 'id' | 'requestId' | 'status' | 'createdAt'>
+): Promise<WithdrawalRequest> {
+  const withdrawals = await getWithdrawals();
+  const marketers = await getMarketers();
+  const marketer = marketers.find((m) => m.id === data.marketerId);
+
+  if (!marketer) throw new Error('Marketer not found');
+  if (marketer.walletBalance < data.amount) {
+    throw new Error('رصيد المحفظة المتاح أقل من المبلغ المطلوب سحبه');
+  }
+
+  // Deduct from marketer wallet immediately into withdrawal processing
+  marketer.walletBalance -= data.amount;
+  setStorageItem(KEYS.MARKETERS, marketers);
+
+  const now = new Date().toISOString();
+  const newWithdrawal: WithdrawalRequest = {
+    id: `wd-${Date.now().toString(36)}`,
+    requestId: generateWithdrawalId(),
+    marketerId: data.marketerId,
+    marketerName: data.marketerName || marketer.name,
+    marketerPhone: data.marketerPhone || marketer.phone,
+    amount: data.amount,
+    paymentMethod: data.paymentMethod,
+    accountDetails: data.accountDetails,
+    status: 'pending',
+    createdAt: now,
+  };
+
+  withdrawals.unshift(newWithdrawal);
+  setStorageItem(KEYS.WITHDRAWALS, withdrawals);
+  return newWithdrawal;
+}
+
+export async function updateWithdrawalStatus(
+  id: string,
+  newStatus: 'approved' | 'rejected',
+  receiptOrReason?: string
+): Promise<WithdrawalRequest> {
+  const withdrawals = await getWithdrawals();
+  const index = withdrawals.findIndex((w) => w.id === id);
+  if (index === -1) throw new Error('Withdrawal request not found');
+
+  const req = withdrawals[index];
+  const now = new Date().toISOString();
+
+  req.status = newStatus;
+  req.processedAt = now;
+
+  const marketers = await getMarketers();
+  const marketer = marketers.find((m) => m.id === req.marketerId);
+
+  if (newStatus === 'approved') {
+    req.transactionReceipt = receiptOrReason || 'TX-SUCCESS-VERIFIED';
+    if (marketer) {
+      marketer.totalWithdrawn += req.amount;
+      setStorageItem(KEYS.MARKETERS, marketers);
+    }
+  } else if (newStatus === 'rejected') {
+    req.rejectReason = receiptOrReason || 'تم رفض العملية';
+    // Refund the amount back to the marketer's wallet balance!
+    if (marketer) {
+      marketer.walletBalance += req.amount;
+      setStorageItem(KEYS.MARKETERS, marketers);
+    }
+  }
+
+  withdrawals[index] = req;
+  setStorageItem(KEYS.WITHDRAWALS, withdrawals);
+  return req;
+}
+
+// ─── Governorates Shipping API ───────────────────────────────
+
+export async function getShippingRates(): Promise<GovernorateShipping[]> {
+  return getStorageItem<GovernorateShipping[]>(KEYS.GOVERNORATES, INITIAL_GOVERNORATES);
+}
+
+export async function updateShippingRate(id: string, fee: number): Promise<void> {
+  const rates = await getShippingRates();
+  const item = rates.find((r) => r.id === id);
+  if (item) {
+    item.fee = fee;
+    setStorageItem(KEYS.GOVERNORATES, rates);
+  }
+}
+
+// ─── Settings API ─────────────────────────────────────────────
+
+export async function getSettings(): Promise<PlatformSettings> {
+  return getStorageItem<PlatformSettings>(KEYS.SETTINGS, INITIAL_SETTINGS);
+}
+
+export async function updateSettings(settingsData: Partial<PlatformSettings>): Promise<PlatformSettings> {
+  const current = await getSettings();
+  const updated = { ...current, ...settingsData };
+  setStorageItem(KEYS.SETTINGS, updated);
+  return updated;
+}
+
+// ─── Platform Analytics API ──────────────────────────────────
+
+export async function getAdminStats() {
+  const orders = await getOrders();
+  const products = await getProducts();
+  const marketers = await getMarketers();
+  const withdrawals = await getWithdrawals();
+
+  const totalRevenue = orders.reduce((sum, o) => sum + (o.status !== 'cancelled' ? o.totalAmount : 0), 0);
+  const totalWholesale = orders.reduce((sum, o) => sum + (o.status !== 'cancelled' ? o.wholesaleTotal : 0), 0);
+  const totalProfit = orders.reduce((sum, o) => sum + (o.status === 'delivered' ? o.platformProfit : 0), 0);
+  const totalCommissions = orders.reduce((sum, o) => sum + (o.status === 'delivered' ? o.affiliateCommission : 0), 0);
+  const deliveredOrders = orders.filter((o) => o.status === 'delivered');
+  const deliveryRate = orders.length > 0 ? Math.round((deliveredOrders.length / orders.length) * 100) : 0;
+  const pendingWithdrawals = withdrawals.filter((w) => w.status === 'pending');
+
+  return {
+    totalRevenue,
+    totalWholesale,
+    totalProfit,
+    totalCommissions,
+    ordersCount: orders.length,
+    deliveredCount: deliveredOrders.length,
+    deliveryRate,
+    productsCount: products.length,
+    marketersCount: marketers.length,
+    pendingWithdrawalsCount: pendingWithdrawals.length,
+    pendingWithdrawalsAmount: pendingWithdrawals.reduce((sum, w) => sum + w.amount, 0),
+  };
+}
