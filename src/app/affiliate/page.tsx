@@ -16,7 +16,8 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useProducts } from '@/hooks/useProducts';
-import { getOrdersByAffiliate, getMarketers } from '@/lib/dataService';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
+import { getOrdersByAffiliate, getMarketers, getMarketerById } from '@/lib/dataService';
 import type { Product, Order, Marketer } from '@/lib/types';
 import AffiliateProducts from '@/components/affiliate/AffiliateProducts';
 import CreateOrderForm from '@/components/affiliate/CreateOrderForm';
@@ -49,11 +50,14 @@ export default function AffiliatePage() {
     }
   }, [currentMarketer]);
 
-  const loadMarketerOrders = async () => {
+  const refreshMarketerAndOrders = async () => {
     if (!activeMarketer) return;
-    setLoadingOrders(true);
     try {
-      const data = await getOrdersByAffiliate(activeMarketer.id);
+      const [freshMarketer, data] = await Promise.all([
+        getMarketerById(activeMarketer.id),
+        getOrdersByAffiliate(activeMarketer.id),
+      ]);
+      if (freshMarketer) setActiveMarketer(freshMarketer);
       setOrders(data);
     } catch (e) {
       console.error(e);
@@ -62,16 +66,20 @@ export default function AffiliatePage() {
     }
   };
 
+  useRealtimeSync(() => {
+    refreshMarketerAndOrders();
+  });
+
   useEffect(() => {
-    loadMarketerOrders();
+    refreshMarketerAndOrders();
 
     const handleUpdate = () => {
-      loadMarketerOrders();
+      refreshMarketerAndOrders();
     };
 
     window.addEventListener('affiliate_data_changed', handleUpdate);
     return () => window.removeEventListener('affiliate_data_changed', handleUpdate);
-  }, [activeMarketer]);
+  }, [activeMarketer?.id]);
 
   const handleSelectProductForOrder = (product: Product) => {
     setSelectedProductForOrder(product);
@@ -260,7 +268,7 @@ export default function AffiliatePage() {
             products={products}
             preSelectedProduct={selectedProductForOrder}
             onOrderSuccess={() => {
-              loadMarketerOrders();
+              refreshMarketerAndOrders();
             }}
           />
         )}

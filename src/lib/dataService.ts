@@ -15,6 +15,7 @@ import {
   INITIAL_GOVERNORATES,
   INITIAL_SETTINGS,
 } from './mockData';
+import { broadcastLocalChange } from './realtimeSync';
 
 const KEYS = {
   PRODUCTS: 'ctrl_yz_products',
@@ -26,7 +27,7 @@ const KEYS = {
   CATALOG_VERSION: 'ctrl_yz_catalog_version',
 };
 
-const CURRENT_CATALOG_VERSION = 'v5_logo_and_brand_campaign';
+const CURRENT_CATALOG_VERSION = 'v6_full_realtime_database';
 
 function checkCatalogVersion(): void {
   if (typeof window === 'undefined') return;
@@ -81,15 +82,55 @@ export function generateWithdrawalId(): string {
 // ─── Products API ─────────────────────────────────────────────
 
 export async function getProducts(): Promise<Product[]> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/products', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setStorageItem(KEYS.PRODUCTS, data);
+        return data;
+      }
+    } catch {
+      // Fallback to local storage if API is unreachable
+    }
+  }
   return getStorageItem<Product[]>(KEYS.PRODUCTS, INITIAL_PRODUCTS);
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch(`/api/products/${id}`, { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // fallback
+    }
+  }
   const products = await getProducts();
   return products.find((p) => p.id === id) || null;
 }
 
 export async function saveProduct(productData: Partial<Product>): Promise<Product> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productData),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        broadcastLocalChange('product_saved', saved.id);
+        return saved;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  // Local fallback
   const products = await getProducts();
   const now = new Date().toISOString();
 
@@ -103,6 +144,7 @@ export async function saveProduct(productData: Partial<Product>): Promise<Produc
       };
       products[index] = updated;
       setStorageItem(KEYS.PRODUCTS, products);
+      broadcastLocalChange('product_saved', updated.id);
       return updated;
     }
   }
@@ -112,22 +154,22 @@ export async function saveProduct(productData: Partial<Product>): Promise<Produc
     name_en: productData.name_en || 'New Product',
     name_ar: productData.name_ar || 'منتج جديد',
     brand: productData.brand || 'Ctrl YZ',
-    category: productData.category || 'Hoodies',
-    costPrice: Number(productData.costPrice || 200),
-    wholesalePrice: Number(productData.wholesalePrice || 300),
-    suggestedPrice: Number(productData.suggestedPrice || 500),
-    minPrice: Number(productData.minPrice || 450),
-    price: Number(productData.suggestedPrice || 500),
+    category: productData.category || 'Streetwear',
+    costPrice: Number(productData.costPrice || 260),
+    wholesalePrice: Number(productData.wholesalePrice || 370),
+    suggestedPrice: Number(productData.suggestedPrice || 590),
+    minPrice: Number(productData.minPrice || 510),
+    price: Number(productData.suggestedPrice || 590),
     salePrice: productData.salePrice ? Number(productData.salePrice) : undefined,
-    commission: Number(productData.commission || (Number(productData.suggestedPrice || 500) - Number(productData.wholesalePrice || 300))),
+    commission: Number(productData.commission || (Number(productData.suggestedPrice || 590) - Number(productData.wholesalePrice || 370))),
     description_en: productData.description_en || '',
     description_ar: productData.description_ar || '',
     images: productData.images && productData.images.length > 0 ? productData.images : ['/products/06f6580b-e809-4fb1-a16b-b668d10ab5a8.jfif'],
     marketingDriveUrl: productData.marketingDriveUrl || '',
     adCopies: productData.adCopies || [],
-    sizes: productData.sizes && productData.sizes.length > 0 ? productData.sizes : ['M', 'L', 'XL'],
-    colors: productData.colors && productData.colors.length > 0 ? productData.colors : [{ name: 'Black', hex: '#111827' }],
-    stock: Number(productData.stock ?? 50),
+    sizes: productData.sizes && productData.sizes.length > 0 ? productData.sizes : ['M', 'L', 'XL', '2XL', '3XL'],
+    colors: productData.colors && productData.colors.length > 0 ? productData.colors : [{ name: 'Jet Black', hex: '#111827' }],
+    stock: Number(productData.stock ?? 100),
     isActive: productData.isActive !== false,
     isFeatured: Boolean(productData.isFeatured),
     createdAt: now,
@@ -136,38 +178,108 @@ export async function saveProduct(productData: Partial<Product>): Promise<Produc
 
   products.unshift(newProduct);
   setStorageItem(KEYS.PRODUCTS, products);
+  broadcastLocalChange('product_saved', newProduct.id);
   return newProduct;
 }
 
 export async function deleteProduct(id: string): Promise<void> {
+  if (typeof window !== 'undefined') {
+    try {
+      await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      broadcastLocalChange('product_deleted', id);
+    } catch {
+      // fallback
+    }
+  }
   const products = await getProducts();
   const filtered = products.filter((p) => p.id !== id);
   setStorageItem(KEYS.PRODUCTS, filtered);
+  broadcastLocalChange('product_deleted', id);
 }
 
 // ─── Orders API ───────────────────────────────────────────────
 
 export async function getOrders(): Promise<Order[]> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/orders', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setStorageItem(KEYS.ORDERS, data);
+        return data;
+      }
+    } catch {
+      // fallback
+    }
+  }
   return getStorageItem<Order[]>(KEYS.ORDERS, INITIAL_ORDERS);
 }
 
 export async function getOrderById(id: string): Promise<Order | null> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch(`/api/orders/${id}`, { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // fallback
+    }
+  }
   const orders = await getOrders();
   return orders.find((o) => o.id === id) || null;
 }
 
 export async function getOrderByNumber(orderNumber: string): Promise<Order | null> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch(`/api/orders?orderNumber=${encodeURIComponent(orderNumber)}`, { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // fallback
+    }
+  }
   const orders = await getOrders();
   const cleaned = orderNumber.trim().toUpperCase();
   return orders.find((o) => o.orderNumber.toUpperCase() === cleaned) || null;
 }
 
 export async function getOrdersByAffiliate(affiliateId: string): Promise<Order[]> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch(`/api/orders?affiliateId=${encodeURIComponent(affiliateId)}`, { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // fallback
+    }
+  }
   const orders = await getOrders();
   return orders.filter((o) => o.affiliateId === affiliateId);
 }
 
 export async function createOrder(data: Partial<Order>): Promise<Order> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        broadcastLocalChange('order_created', created.id);
+        return created;
+      }
+    } catch (e) {
+      console.warn('API createOrder failed, falling back to local engine:', e);
+    }
+  }
+
+  // Local fallback logic
   const orders = await getOrders();
   const now = new Date().toISOString();
   const orderNumber = generateOrderNumber();
@@ -175,10 +287,13 @@ export async function createOrder(data: Partial<Order>): Promise<Order> {
   const items = data.items || [];
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const wholesaleTotal = items.reduce((sum, item) => sum + (item.wholesalePrice || 0) * item.quantity, 0);
-  const affiliateCommission = items.reduce((sum, item) => sum + (item.commission || (item.price - item.wholesalePrice)) * item.quantity, 0);
+  const affiliateCommission = items.reduce(
+    (sum, item) => sum + (item.commission || (item.price - item.wholesalePrice)) * item.quantity,
+    0
+  );
   const shippingFee = Number(data.shippingFee ?? 45);
   const totalAmount = subtotal + shippingFee;
-  const platformProfit = Math.max(0, wholesaleTotal - (items.length * 150)); // Estimated wholesale margin
+  const platformProfit = Math.max(0, wholesaleTotal - (items.length * 150));
 
   const newOrder: Order = {
     id: `ord-${Date.now().toString(36)}`,
@@ -215,7 +330,6 @@ export async function createOrder(data: Partial<Order>): Promise<Order> {
   orders.unshift(newOrder);
   setStorageItem(KEYS.ORDERS, orders);
 
-  // If order was created by a registered affiliate, update their pending balance and orders count
   if (data.affiliateId) {
     const marketers = await getMarketers();
     const marketer = marketers.find((m) => m.id === data.affiliateId || m.uid === data.affiliateId);
@@ -226,7 +340,6 @@ export async function createOrder(data: Partial<Order>): Promise<Order> {
     }
   }
 
-  // Deduct stock from products
   const products = await getProducts();
   items.forEach((item) => {
     const prod = products.find((p) => p.id === item.productId);
@@ -236,6 +349,7 @@ export async function createOrder(data: Partial<Order>): Promise<Order> {
   });
   setStorageItem(KEYS.PRODUCTS, products);
 
+  broadcastLocalChange('order_created', newOrder.id);
   return newOrder;
 }
 
@@ -244,6 +358,30 @@ export async function updateOrderStatus(
   newStatus: OrderStatus,
   options?: { shippingCompany?: string; trackingNumber?: string; note?: string }
 ): Promise<Order> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: newStatus,
+          shippingCompany: options?.shippingCompany,
+          trackingNumber: options?.trackingNumber,
+          statusNotes: options?.note,
+          note: options?.note,
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        broadcastLocalChange('order_updated', updated.id);
+        return updated;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  // Local fallback logic
   const orders = await getOrders();
   const index = orders.findIndex((o) => o.id === orderId);
   if (index === -1) throw new Error('Order not found');
@@ -267,8 +405,6 @@ export async function updateOrderStatus(
     note: options?.note || `تم تغيير الحالة إلى ${newStatus}`,
   });
 
-  // Commission balance logic:
-  // When an order transitions to 'delivered', move affiliateCommission from pending to walletBalance!
   if (newStatus === 'delivered' && !order.isCommissionPaid && order.affiliateId) {
     order.isCommissionPaid = true;
     const marketers = await getMarketers();
@@ -283,8 +419,11 @@ export async function updateOrderStatus(
     }
   }
 
-  // If order was returned or cancelled, remove from pending balance
-  if ((newStatus === 'returned' || newStatus === 'cancelled') && previousStatus !== 'returned' && previousStatus !== 'cancelled') {
+  if (
+    (newStatus === 'returned' || newStatus === 'cancelled') &&
+    previousStatus !== 'returned' &&
+    previousStatus !== 'cancelled'
+  ) {
     if (order.affiliateId && !order.isCommissionPaid) {
       const marketers = await getMarketers();
       const marketer = marketers.find((m) => m.id === order.affiliateId || m.uid === order.affiliateId);
@@ -298,32 +437,91 @@ export async function updateOrderStatus(
 
   orders[index] = order;
   setStorageItem(KEYS.ORDERS, orders);
+  broadcastLocalChange('order_updated', order.id);
   return order;
 }
 
 export async function deleteOrder(id: string): Promise<void> {
+  if (typeof window !== 'undefined') {
+    try {
+      await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+      broadcastLocalChange('order_deleted', id);
+    } catch {
+      // fallback
+    }
+  }
   const orders = await getOrders();
   setStorageItem(KEYS.ORDERS, orders.filter((o) => o.id !== id));
+  broadcastLocalChange('order_deleted', id);
 }
 
 // ─── Marketers API ────────────────────────────────────────────
 
 export async function getMarketers(): Promise<Marketer[]> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/marketers', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setStorageItem(KEYS.MARKETERS, data);
+        return data;
+      }
+    } catch {
+      // fallback
+    }
+  }
   return getStorageItem<Marketer[]>(KEYS.MARKETERS, INITIAL_MARKETERS);
 }
 
 export async function getMarketerById(id: string): Promise<Marketer | null> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch(`/api/marketers?id=${encodeURIComponent(id)}`, { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // fallback
+    }
+  }
   const marketers = await getMarketers();
   return marketers.find((m) => m.id === id || m.uid === id) || null;
 }
 
 export async function getMarketerByCode(code: string): Promise<Marketer | null> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch(`/api/marketers?code=${encodeURIComponent(code)}`, { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // fallback
+    }
+  }
   const marketers = await getMarketers();
   const cleaned = code.trim().toLowerCase();
   return marketers.find((m) => m.affiliateCode.toLowerCase() === cleaned) || null;
 }
 
 export async function saveMarketer(data: Partial<Marketer>): Promise<Marketer> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/marketers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        broadcastLocalChange('marketer_saved', saved.id);
+        return saved;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
   const marketers = await getMarketers();
   const now = new Date().toISOString();
 
@@ -333,6 +531,7 @@ export async function saveMarketer(data: Partial<Marketer>): Promise<Marketer> {
       const updated: Marketer = { ...marketers[idx], ...data };
       marketers[idx] = updated;
       setStorageItem(KEYS.MARKETERS, marketers);
+      broadcastLocalChange('marketer_saved', updated.id);
       return updated;
     }
   }
@@ -363,25 +562,66 @@ export async function saveMarketer(data: Partial<Marketer>): Promise<Marketer> {
 
   marketers.unshift(newMarketer);
   setStorageItem(KEYS.MARKETERS, marketers);
+  broadcastLocalChange('marketer_saved', newMarketer.id);
   return newMarketer;
 }
 
 export async function toggleMarketerStatus(id: string): Promise<Marketer> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/marketers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'toggle_status' }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        broadcastLocalChange('marketer_saved', id);
+        return updated;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
   const marketers = await getMarketers();
   const marketer = marketers.find((m) => m.id === id);
   if (!marketer) throw new Error('Marketer not found');
   marketer.status = marketer.status === 'active' ? 'suspended' : 'active';
   setStorageItem(KEYS.MARKETERS, marketers);
+  broadcastLocalChange('marketer_saved', id);
   return marketer;
 }
 
 // ─── Withdrawals API ──────────────────────────────────────────
 
 export async function getWithdrawals(): Promise<WithdrawalRequest[]> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/withdrawals', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setStorageItem(KEYS.WITHDRAWALS, data);
+        return data;
+      }
+    } catch {
+      // fallback
+    }
+  }
   return getStorageItem<WithdrawalRequest[]>(KEYS.WITHDRAWALS, INITIAL_WITHDRAWALS);
 }
 
 export async function getWithdrawalsByMarketer(marketerId: string): Promise<WithdrawalRequest[]> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch(`/api/withdrawals?marketerId=${encodeURIComponent(marketerId)}`, { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // fallback
+    }
+  }
   const withdrawals = await getWithdrawals();
   return withdrawals.filter((w) => w.marketerId === marketerId);
 }
@@ -389,6 +629,24 @@ export async function getWithdrawalsByMarketer(marketerId: string): Promise<With
 export async function createWithdrawalRequest(
   data: Omit<WithdrawalRequest, 'id' | 'requestId' | 'status' | 'createdAt'>
 ): Promise<WithdrawalRequest> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/withdrawals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        broadcastLocalChange('withdrawal_created', created.id);
+        return created;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  // Local fallback
   const withdrawals = await getWithdrawals();
   const marketers = await getMarketers();
   const marketer = marketers.find((m) => m.id === data.marketerId);
@@ -398,7 +656,6 @@ export async function createWithdrawalRequest(
     throw new Error('رصيد المحفظة المتاح أقل من المبلغ المطلوب سحبه');
   }
 
-  // Deduct from marketer wallet immediately into withdrawal processing
   marketer.walletBalance -= data.amount;
   setStorageItem(KEYS.MARKETERS, marketers);
 
@@ -418,6 +675,7 @@ export async function createWithdrawalRequest(
 
   withdrawals.unshift(newWithdrawal);
   setStorageItem(KEYS.WITHDRAWALS, withdrawals);
+  broadcastLocalChange('withdrawal_created', newWithdrawal.id);
   return newWithdrawal;
 }
 
@@ -426,6 +684,24 @@ export async function updateWithdrawalStatus(
   newStatus: 'approved' | 'rejected',
   receiptOrReason?: string
 ): Promise<WithdrawalRequest> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/withdrawals', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus, receiptOrReason }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        broadcastLocalChange('withdrawal_updated', id);
+        return updated;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  // Local fallback
   const withdrawals = await getWithdrawals();
   const index = withdrawals.findIndex((w) => w.id === id);
   if (index === -1) throw new Error('Withdrawal request not found');
@@ -447,7 +723,6 @@ export async function updateWithdrawalStatus(
     }
   } else if (newStatus === 'rejected') {
     req.rejectReason = receiptOrReason || 'تم رفض العملية';
-    // Refund the amount back to the marketer's wallet balance!
     if (marketer) {
       marketer.walletBalance += req.amount;
       setStorageItem(KEYS.MARKETERS, marketers);
@@ -456,6 +731,7 @@ export async function updateWithdrawalStatus(
 
   withdrawals[index] = req;
   setStorageItem(KEYS.WITHDRAWALS, withdrawals);
+  broadcastLocalChange('withdrawal_updated', id);
   return req;
 }
 
@@ -477,13 +753,44 @@ export async function updateShippingRate(id: string, fee: number): Promise<void>
 // ─── Settings API ─────────────────────────────────────────────
 
 export async function getSettings(): Promise<PlatformSettings> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/settings', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings) {
+          setStorageItem(KEYS.SETTINGS, data.settings);
+          return data.settings;
+        }
+      }
+    } catch {
+      // fallback
+    }
+  }
   return getStorageItem<PlatformSettings>(KEYS.SETTINGS, INITIAL_SETTINGS);
 }
 
 export async function updateSettings(settingsData: Partial<PlatformSettings>): Promise<PlatformSettings> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: settingsData }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        broadcastLocalChange('settings_updated');
+        return data.settings;
+      }
+    } catch {
+      // fallback
+    }
+  }
   const current = await getSettings();
   const updated = { ...current, ...settingsData };
   setStorageItem(KEYS.SETTINGS, updated);
+  broadcastLocalChange('settings_updated');
   return updated;
 }
 

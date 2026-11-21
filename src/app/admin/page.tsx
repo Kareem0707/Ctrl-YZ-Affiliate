@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import {
   getOrders,
   getProducts,
@@ -42,6 +43,11 @@ export default function AdminPage() {
   const [marketers, setMarketers] = useState<Marketer[]>([]);
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Real-time synchronization hook: automatically refreshes data when changes occur on server
+  const { isConnected } = useRealtimeSync(() => {
+    loadData();
+  });
 
   const loadData = async () => {
     try {
@@ -93,9 +99,13 @@ export default function AdminPage() {
                 <span className="text-[10px] bg-brand/20 text-[#38BDF8] border border-brand/40 px-2 py-0.5 rounded font-mono">
                   Operations Console
                 </span>
+                <span className="inline-flex items-center gap-1.5 text-[10px] bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 px-2.5 py-0.5 rounded-full font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Realtime DB Synced</span>
+                </span>
               </div>
               <p className="text-xs text-neutral-400 mt-0.5">
-                إدارة الطلبات، مخزون الكتالوج، وتسويات محافظ المسوقين
+                قاعدة بيانات حية متصلة — إرسال، استقبال، ومزامنة فورية للطلبات والعمولات
               </p>
             </div>
           </div>

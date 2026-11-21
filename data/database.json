@@ -1,0 +1,1405 @@
+{
+  "version": 1,
+  "lastModified": 1795294110627,
+  "products": [
+    {
+      "id": "prod-yz-01",
+      "name_en": "Ctrl YZ \"Mirrorball Disco\" Oversized Hoodie",
+      "name_ar": "هودي أوفر سايز \"Mirrorball Disco\" جرافيك الديسكو والقبلة - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Streetwear",
+      "costPrice": 260,
+      "wholesalePrice": 370,
+      "suggestedPrice": 590,
+      "minPrice": 510,
+      "price": 590,
+      "salePrice": 590,
+      "commission": 220,
+      "description_en": "Heavyweight cotton fleece (420 GSM) with iconic Mirrorball disco print and star chest embroidery. Drop shoulder fit.",
+      "description_ar": "قطن ميلتون مصري أصلي 420 جرام مبطن بوبرة دافئة. طباعة جرافيك ديسكو عالية الدقة ومقاومة للغسيل مع علامة النجمة الفضية المطرزة.",
+      "images": [
+        "/products/06f6580b-e809-4fb1-a16b-b668d10ab5a8.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-mirrorball",
+      "adCopies": [
+        {
+          "title": "إعلان فيسبوك وتيك توك (القطعة الأكثر مبيعاً في كولكشن الشتاء)",
+          "copy": "الهودي الأوفر سايز اللي مكسر الدنيا وصل من Ctrl YZ!\nخامة ميلتون قطن 100% ثقيل 420 جرام مبطن ويدفيك في عز البرد.\n- طباعة ديجيتال ثابتة جداً ضد الغسيل\n- معاينة كاملة ومقاسك مظبوط قبل الدفع\n- شحن وتوصيل لجميع المحافظات\nاحجز قطعتك الآن قبل نفاذ الكمية!"
+        }
+      ],
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 119,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-01T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-02",
+      "name_en": "Ctrl YZ \"No Time For Romance\" Marble Streetwear Hoodie",
+      "name_ar": "هودي \"No Time For Romance\" ستايل ماربل أسود - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Streetwear",
+      "costPrice": 260,
+      "wholesalePrice": 370,
+      "suggestedPrice": 590,
+      "minPrice": 510,
+      "price": 590,
+      "salePrice": 590,
+      "commission": 220,
+      "description_en": "Streetwear drop-shoulder hoodie featuring Marble minimal front and bold pink/white back typography.",
+      "description_ar": "هودي شبابي ستريت وير راقي بكلمة Marble على الصدر وطباعة خلفية جريئة No Time For Romance بألوان البينك والأبيض.",
+      "images": [
+        "/products/2c2bf9e7-ac85-4ca5-8f23-c91851b365e3.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-marble",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 95,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-02T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-03",
+      "name_en": "Ctrl YZ \"Billie Eilish\" Vintage Music Collage Hoodie",
+      "name_ar": "هودي \"Billie Eilish\" أوفر سايز ميوزيك آرت كولكشن - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Music & Artists",
+      "costPrice": 270,
+      "wholesalePrice": 380,
+      "suggestedPrice": 620,
+      "minPrice": 530,
+      "price": 620,
+      "salePrice": 620,
+      "commission": 240,
+      "description_en": "Official Billie Eilish visual aesthetic oversized hoodie with detailed monochrome back poster print.",
+      "description_ar": "هودي أوفر سايز لعشاق بيلي إيليش بطباعة بوستر فوتوغرافي مونوكروم عالي الدقة على الظهر وتوقيع الخط الرياضي على الصدر.",
+      "images": [
+        "/products/2f3d209b-4611-44a6-9a8c-67c3dad93e53.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-billie",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 80,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-03T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-04",
+      "name_en": "Ctrl YZ \"Arabic Calligraphy\" Heritage Cream Hoodie",
+      "name_ar": "هودي \"لا تأسفن على غدر الزمان\" بالخط العربي الأصيل (بيج / كريمي) - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Arabic Calligraphy",
+      "costPrice": 280,
+      "wholesalePrice": 390,
+      "suggestedPrice": 650,
+      "minPrice": 550,
+      "price": 650,
+      "salePrice": 650,
+      "commission": 260,
+      "description_en": "Signature heavyweight cream fleece hoodie with intricate classical Arabic calligraphy \"لا تأسفن على غدر الزمان\".",
+      "description_ar": "القطعة الأكثر فخامة! هودي بيج كريمي فاخر 420 جرام محفور بلوحة خط عربي كلاسيكي بيت الإمام الشافعي \"لا تأسفن على غدر الزمان .. لطالما رقصت على جثث الأسود كلاب\".",
+      "images": [
+        "/products/3bdc26c0-9566-444e-bdb5-e697b2a78c52.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-zaman",
+      "adCopies": [
+        {
+          "title": "إعلان فيسبوك وتيك توك (فخامة الخط العربي والأصالة)",
+          "copy": "الأصالة والهيبة في قطعة واحدة!\nهودي \"لا تأسفن على غدر الزمان\" بلون أوف وايت / كريمي فاخر، خامة ميلتون ثقيل 420 جرام وتقفيل خياطة دبل.\n- خامة قطن شتوي ممتازة ناعمة ودافئة\n- طباعة خط عربي أصلية راقية وثابتة\n- معاينة كاملة ومجانية قبل الاستلام والدفع عند الباب\nاطلب الآن واستفد من العرض الحصري!"
+        }
+      ],
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Oatmeal Beige",
+          "hex": "#d1c7bd"
+        }
+      ],
+      "stock": 140,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-04T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-05",
+      "name_en": "Ctrl YZ \"Sincal! Bone Star\" Dark Aesthetic Hoodie",
+      "name_ar": "هودي \"Sincal! Bone Star\" النجمة العظمية أسود - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Streetwear",
+      "costPrice": 260,
+      "wholesalePrice": 370,
+      "suggestedPrice": 590,
+      "minPrice": 510,
+      "price": 590,
+      "salePrice": 590,
+      "commission": 220,
+      "description_en": "Dark aesthetic streetwear hoodie with distressed bone typography and bloody star graphic on back.",
+      "description_ar": "هودي دارك ستريت وير أسود بتصميم عظام ثلاثي الأبعاد وقطرات حمراء مع نجمة عظمية ضخمة على الظهر بالكامل.",
+      "images": [
+        "/products/3cb61a1d-a9bd-4175-85d6-73de64103cd0.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-sincal",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 75,
+      "isActive": true,
+      "isFeatured": false,
+      "createdAt": "2026-11-05T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-06",
+      "name_en": "Ctrl YZ \"Porsche 911 GT3 RS\" Pure White Motorsport Hoodie",
+      "name_ar": "هودي \"Porsche 911 GT3 RS\" موترسبورت ناصع البياض - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Cars & Motorsport",
+      "costPrice": 280,
+      "wholesalePrice": 390,
+      "suggestedPrice": 650,
+      "minPrice": 560,
+      "price": 650,
+      "salePrice": 650,
+      "commission": 260,
+      "description_en": "Clean white fleece hoodie with iconic Porsche crest on front chest and legendary 911 GT3 RS race track blueprint on back.",
+      "description_ar": "عشاق السرعة والبورش! هودي أبيض قطن 100% مبطن بشعار درع بورش الذهبي على الصدر وجرافيك سيارة 911 GT3 RS ومواصفاتها الرياضية على الظهر.",
+      "images": [
+        "/products/4785b824-6501-4579-866a-8f00d0680fdb.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-porsche-white",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Pure White",
+          "hex": "#ffffff"
+        }
+      ],
+      "stock": 110,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-06T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-07",
+      "name_en": "Ctrl YZ \"Scary Heart\" Flaming Dark Streetwear Hoodie",
+      "name_ar": "هودي \"Scary Heart\" القلب المشتعل أسود - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Streetwear",
+      "costPrice": 260,
+      "wholesalePrice": 370,
+      "suggestedPrice": 590,
+      "minPrice": 510,
+      "price": 590,
+      "salePrice": 590,
+      "commission": 220,
+      "description_en": "Heavyweight black hoodie with fiery dark heart chest badge, red heart sleeve prints, and full-back typography.",
+      "description_ar": "هودي شتوي أسود فخم يحمل لوجو القلب الناري على الصدر، مع قلوب حمراء جانبية على الأكمام، وجرافيك Scary Heart على الظهر بالكامل.",
+      "images": [
+        "/products/50540441-da3c-49fc-b8db-4a579dc5d230.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-scary-heart",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 90,
+      "isActive": true,
+      "isFeatured": false,
+      "createdAt": "2026-11-07T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-08",
+      "name_en": "Ctrl YZ \"Cristiano Ronaldo GOAT - Real Madrid\" Tribute Hoodie",
+      "name_ar": "هودي \"Cristiano Ronaldo GOAT - Real Madrid\" الدون كولكشن - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Sports & Legends",
+      "costPrice": 280,
+      "wholesalePrice": 390,
+      "suggestedPrice": 650,
+      "minPrice": 560,
+      "price": 650,
+      "salePrice": 650,
+      "commission": 260,
+      "description_en": "Tribute oversized hoodie celebrating Cristiano Ronaldo with Real Madrid monochrome crest and iconic celebration poster back.",
+      "description_ar": "تكريم أسطورة كرة القدم كريستيانو رونالدو! تاج ريال مدريد الأبيض على الصدر، وجرافيك احتفال الدون الشهير وألقاب الـ GOAT على الظهر بالكامل.",
+      "images": [
+        "/products/5ac178b8-e13e-4c8a-b20e-b657abdcd021.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-cr7",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 135,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-08T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-09",
+      "name_en": "Ctrl YZ \"The Journey's a Lonely One\" Electric Blue Hoodie",
+      "name_ar": "هودي \"The Journey's A Lonely One\" الشبح الأزرق المضيء - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Streetwear",
+      "costPrice": 260,
+      "wholesalePrice": 370,
+      "suggestedPrice": 590,
+      "minPrice": 510,
+      "price": 590,
+      "salePrice": 590,
+      "commission": 220,
+      "description_en": "Minimalist deep black hoodie with glowing electric blue silhouette art on back and circular orbit prints on chest.",
+      "description_ar": "قطعة فنية عصرية باللون الأسود الملكي مع طباعة زرقاء مضيئة على الظهر تحكي قصة الرحلة، ودوائر الفضاء الدائرية على الصدر.",
+      "images": [
+        "/products/5c9cae38-59b1-4f74-bea9-8880195e8751.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-journey",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 65,
+      "isActive": true,
+      "isFeatured": false,
+      "createdAt": "2026-11-09T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-10",
+      "name_en": "Ctrl YZ \"The Golden Black Mentalite\" Pink Crown Graffiti Hoodie",
+      "name_ar": "هودي \"The Golden Black Mentalite\" بينك كراون جرافيتي - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Streetwear",
+      "costPrice": 260,
+      "wholesalePrice": 370,
+      "suggestedPrice": 590,
+      "minPrice": 510,
+      "price": 590,
+      "salePrice": 590,
+      "commission": 220,
+      "description_en": "Vibrant neon pink graffiti lettering with royal crown accent on jet black premium fleece hoodie.",
+      "description_ar": "ستايل جرافيتي متمرد باللون الفوشيا الوردي النيون مع تاج الملوك الملكي وشعار The Golden Black Mentalite بحجم عريض على الظهر.",
+      "images": [
+        "/products/5d421f1c-2cea-401c-875d-041a44fe46de.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-golden",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 85,
+      "isActive": true,
+      "isFeatured": false,
+      "createdAt": "2026-11-10T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-11",
+      "name_en": "Ctrl YZ \"Marvel Spider-Man\" Black Streetwear Hoodie",
+      "name_ar": "هودي \"Marvel Spider-Man\" سبايدرمان إديشن أسود - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Pop Culture",
+      "costPrice": 270,
+      "wholesalePrice": 380,
+      "suggestedPrice": 620,
+      "minPrice": 530,
+      "price": 620,
+      "salePrice": 620,
+      "commission": 240,
+      "description_en": "Marvel official style Spider-Man box logo front with split venom/spider emblem art back design.",
+      "description_ar": "هودي مارفل الرسمي مع شعار Marvel Spider-Man الأحمر على الصدر ولوجو العنكبوت المنقسم (أبيض وأحمر) على الظهر بخامة شتوية ممتازة.",
+      "images": [
+        "/products/68923158-79c1-4952-9047-bd6e0f4eb46c.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-spiderman",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 105,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-11T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-12",
+      "name_en": "Ctrl YZ \"Scary Heart Signature\" Oversized Edition",
+      "name_ar": "هودي \"Scary Heart Signature\" إصدار خاص دروب شولدر - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Streetwear",
+      "costPrice": 260,
+      "wholesalePrice": 370,
+      "suggestedPrice": 590,
+      "minPrice": 510,
+      "price": 590,
+      "salePrice": 590,
+      "commission": 220,
+      "description_en": "Signature oversized drop-shoulder edition with heart sleeve embroidery and high-contrast back artwork.",
+      "description_ar": "إصدار خاص من تشكيلة القلوب المشتعلة مع تطريز مزدوج على الأكمام، وقصة دروب شولدر واسعة ومريحة لجميع المقاسات.",
+      "images": [
+        "/products/73d82ab6-a672-4d4a-80ba-01eff1266322.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-scary-v2",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 90,
+      "isActive": true,
+      "isFeatured": false,
+      "createdAt": "2026-11-12T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-13",
+      "name_en": "Ctrl YZ \"Chase Your Dream\" Gold Typography Hoodie",
+      "name_ar": "هودي \"Chase Your Dream\" جولد تايبوجرافي أسود - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Streetwear",
+      "costPrice": 260,
+      "wholesalePrice": 370,
+      "suggestedPrice": 590,
+      "minPrice": 510,
+      "price": 590,
+      "salePrice": 590,
+      "commission": 220,
+      "description_en": "Inspirational typography hoodie in gold and cream on deep black fleece with motivating back manifesto.",
+      "description_ar": "هودي تحفيزي أنيق بعبارة Chase Your Dream باللون الذهبي والأبيض مع مانيفستو الشغف على الظهر بالكامل، خامة قطنية ثقيلة ومتقفلة بعناية.",
+      "images": [
+        "/products/876865fe-1517-4111-ab78-4ef219073a7c.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-chase-dream",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 115,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-13T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-14",
+      "name_en": "Ctrl YZ \"Land of Pride\" Resistance Triangle Hoodie",
+      "name_ar": "هودي \"هنا أرض العزة\" مثلث المقاومة بالخط العربي أسود - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Arabic Calligraphy",
+      "costPrice": 280,
+      "wholesalePrice": 390,
+      "suggestedPrice": 650,
+      "minPrice": 560,
+      "price": 650,
+      "salePrice": 650,
+      "commission": 260,
+      "description_en": "Powerful Arabic calligraphy hoodie centered around the iconic Red Triangle \"هنا أرض العزة\" on premium black fleece.",
+      "description_ar": "قطعة الهيبة والعزة! هودي أسود فاخر يحمل كلمة فلسطين بالخط الديواني على الصدر، والمثلث الأحمر الخالد محفوراً بعبارة \"هنا أرض العزة\" على الظهر.",
+      "images": [
+        "/products/8986f785-faf8-4353-8efd-7748d06f990d.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-ard-el-ezza",
+      "adCopies": [
+        {
+          "title": "إعلان فيسبوك وتيك توك (رمزية العزة والأصالة)",
+          "copy": "هودي \"هنا أرض العزة\" — رمزية الثبات والشرف في تصميم ستريت وير فخم!\nخامة قطن ميلتون 100% مبطن 420 جرام وتقفيل خياطة دبل تدوم لسنين.\n- طباعة جرافيك أصلية للمثلث الأحمر والخط العربي\n- مقاسات من M حتى 3XL واسعة ومريحة\n- معاينة كاملة قبل الدفع والتوصيل لحد باب بيتك\nاطلب قطعتك الآن وارتدي فخرك!"
+        }
+      ],
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 150,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-14T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-15",
+      "name_en": "Ctrl YZ \"Lana Del Rey\" Vintage Aesthetic White Hoodie",
+      "name_ar": "هودي \"Lana Del Rey\" فينتاج آرت كولاج أبيض - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Music & Artists",
+      "costPrice": 270,
+      "wholesalePrice": 380,
+      "suggestedPrice": 620,
+      "minPrice": 530,
+      "price": 620,
+      "salePrice": 620,
+      "commission": 240,
+      "description_en": "Aesthetic vintage collage hoodie honoring Lana Del Rey with black and white cinematic imagery on pure white fleece.",
+      "description_ar": "هودي أبيض سينمائي راقي لعشاق لانا ديل راي، كولاج فوتوغرافي فينتاج بالأبيض والأسود مع بوستر ألبوماتها الأيقونية.",
+      "images": [
+        "/products/916e60e7-d095-4feb-b470-5c3f305f8bd2.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-lana",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Pure White",
+          "hex": "#ffffff"
+        }
+      ],
+      "stock": 85,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-15T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-16",
+      "name_en": "Ctrl YZ \"Insan\" Arabic Calligraphy Sword & Camel White Hoodie",
+      "name_ar": "هودي \"إنسان\" سيف الفارس والجمل بالخط العربي أبيض - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Arabic Calligraphy",
+      "costPrice": 280,
+      "wholesalePrice": 390,
+      "suggestedPrice": 650,
+      "minPrice": 560,
+      "price": 650,
+      "salePrice": 650,
+      "commission": 260,
+      "description_en": "Exceptional artistic white hoodie featuring a detailed calligraphic sword front and camel rider back design.",
+      "description_ar": "تحفة بصرية بالخط العربي! سيف الفارس العربي المحفور بالحروف على الصدر، وفارس الصحراء على الناقة المشكل بالكامل من الخطوط العربية على الظهر.",
+      "images": [
+        "/products/ac925b93-4bc3-40cd-8803-8eae86099589.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-insan",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Pure White",
+          "hex": "#ffffff"
+        }
+      ],
+      "stock": 130,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-16T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-17",
+      "name_en": "Ctrl YZ \"Keffiyeh Knight\" Arabic Calligraphy Masked Hoodie",
+      "name_ar": "هودي \"الكوفية والملثم\" بالخط العربي الأصيل أسود - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Arabic Calligraphy",
+      "costPrice": 280,
+      "wholesalePrice": 390,
+      "suggestedPrice": 650,
+      "minPrice": 560,
+      "price": 650,
+      "salePrice": 650,
+      "commission": 260,
+      "description_en": "Striking black hoodie featuring the masked keffiyeh fighter illustrated entirely out of Arabic letterforms.",
+      "description_ar": "تصميم أسطوري مرسوم بالكامل من تشكيلات الخط العربي الكوفي والديواني لرسمة الكوفية الفلسطينية والملثم مع كلمة فلسطين بالخط العمودي على الصدر.",
+      "images": [
+        "/products/b1e692ee-0293-46fd-bf16-ba7cc2580d54.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-keffiyeh",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 140,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-17T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-18",
+      "name_en": "Ctrl YZ \"Rick and Morty - Schwifty\" White Comic Hoodie",
+      "name_ar": "هودي \"Rick and Morty - Schwifty\" أبيض بوب كالتشر - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Pop Culture",
+      "costPrice": 270,
+      "wholesalePrice": 380,
+      "suggestedPrice": 620,
+      "minPrice": 530,
+      "price": 620,
+      "salePrice": 620,
+      "commission": 240,
+      "description_en": "Fan-favorite Rick and Morty white fleece hoodie featuring Rick with headphones and Schwifty typography.",
+      "description_ar": "لعشاق المسلسل الأسطوري ريك آند مورتي! هودي أبيض قطن ناعم ومبطن مع ريك بنظارات شمسية وسماعات دي جي وتصميم Schwifty الملون.",
+      "images": [
+        "/products/b2c52233-d0ca-455d-b06d-372d592debb8.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-schwifty",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Pure White",
+          "hex": "#ffffff"
+        }
+      ],
+      "stock": 90,
+      "isActive": true,
+      "isFeatured": false,
+      "createdAt": "2026-11-18T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-19",
+      "name_en": "Ctrl YZ \"Crossed Swords & Keffiyeh\" White Heritage Hoodie",
+      "name_ar": "هودي \"والمسلم صار مريب\" السيفين والكوفية أبيض - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Arabic Calligraphy",
+      "costPrice": 280,
+      "wholesalePrice": 390,
+      "suggestedPrice": 650,
+      "minPrice": 560,
+      "price": 650,
+      "salePrice": 650,
+      "commission": 260,
+      "description_en": "Heritage white hoodie with crossed scimitar swords front and keffiyeh fighter with \"والمسلم صار مريب\" quote back.",
+      "description_ar": "هودي أبيض معبر برسمة السيفين المتقاطعين على الصدر، ورسمة الكوفية وعبارة \"والمسلم صار مريب...\" بخامة ميلتون شتوي ثقيل 420 جرام.",
+      "images": [
+        "/products/c5d141f7-2db7-49db-94c5-008054e922d3.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-swords",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Pure White",
+          "hex": "#ffffff"
+        }
+      ],
+      "stock": 100,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-19T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-20",
+      "name_en": "Ctrl YZ \"Toothless Night Fury\" Dragon Black Hoodie",
+      "name_ar": "هودي \"Toothless Night Fury\" تنين الليل أسود - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Pop Culture",
+      "costPrice": 270,
+      "wholesalePrice": 380,
+      "suggestedPrice": 620,
+      "minPrice": 530,
+      "price": 620,
+      "salePrice": 620,
+      "commission": 240,
+      "description_en": "Oversized black hoodie featuring Toothless Night Fury dragon from How to Train Your Dragon with technical spec drawings.",
+      "description_ar": "عشاق التنين توثليس Night Fury! هودي أسود أوفر سايز بطباعة سينمائية ثلاثية الأبعاد للتنين مع رسومات تشريحية وكروكي تقني.",
+      "images": [
+        "/products/c788e75e-795b-4f0f-8a18-f0e9e731945e.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-toothless",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 95,
+      "isActive": true,
+      "isFeatured": false,
+      "createdAt": "2026-11-19T14:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-21",
+      "name_en": "Ctrl YZ \"Rick and Morty - Portal Silhouette\" White Hoodie",
+      "name_ar": "هودي \"Rick and Morty - Portal Silhouette\" بورتال أخضر أبيض - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Pop Culture",
+      "costPrice": 270,
+      "wholesalePrice": 380,
+      "suggestedPrice": 620,
+      "minPrice": 530,
+      "price": 620,
+      "salePrice": 620,
+      "commission": 240,
+      "description_en": "Minimalist white fleece hoodie featuring Rick and Morty silhouette stepping out of the interdimensional green portal.",
+      "description_ar": "تصميم بورتال الأبعاد الأخضر لريك ومورتي بطباعة سيلويت ظلية أنيقة جداً على هودي أبيض ناصع بأعلى خامات القطن المصري.",
+      "images": [
+        "/products/c935ef44-45d6-4bd1-8cc1-97c26f75b237.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-portal",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Pure White",
+          "hex": "#ffffff"
+        }
+      ],
+      "stock": 80,
+      "isActive": true,
+      "isFeatured": false,
+      "createdAt": "2026-11-20T10:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-22",
+      "name_en": "Ctrl YZ \"Porsche GT3 RS Racing Edition\" Black Hoodie",
+      "name_ar": "هودي \"Porsche GT3 RS Motorsport\" حلبات أسود - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Cars & Motorsport",
+      "costPrice": 280,
+      "wholesalePrice": 390,
+      "suggestedPrice": 650,
+      "minPrice": 560,
+      "price": 650,
+      "salePrice": 650,
+      "commission": 260,
+      "description_en": "Motorsport enthusiast black hoodie featuring GT3 logo front and wide-body Porsche GT3 RS track photography back.",
+      "description_ar": "الإصدار الأسود الشرس من بورش! كلمة GT3 على الصدر، ولاندسكيب متكامل لوحش الحلبات 911 GT3 RS مع شبكة التبريد والمواصفات الفنية.",
+      "images": [
+        "/products/ec6905c0-1e5f-40a1-ae51-b939d9e736e8.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-porsche-black",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 125,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-20T12:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    },
+    {
+      "id": "prod-yz-23",
+      "name_en": "Ctrl YZ \"Bla Bla Bla / Doves\" Streetwear Black Hoodie",
+      "name_ar": "هودي \"Bla Bla Bla / Doves\" حمامة السلام والشريط أسود - Ctrl YZ",
+      "brand": "Ctrl YZ",
+      "category": "Streetwear",
+      "costPrice": 260,
+      "wholesalePrice": 370,
+      "suggestedPrice": 590,
+      "minPrice": 510,
+      "price": 590,
+      "salePrice": 590,
+      "commission": 220,
+      "description_en": "Concept streetwear hoodie with arched \"BLA BLA BLA\" front typography and flying doves ribbon artwork back.",
+      "description_ar": "تصميم فني رمزي فريد بعبارة BLA BLA BLA على الصدر بشكل قوسي، ورسمة حمام السلام والشريط التجريدي الأبيض على الظهر.",
+      "images": [
+        "/products/ee79bf74-3c2b-4e38-8cff-b74fbcdbbf84.jfif"
+      ],
+      "marketingDriveUrl": "https://drive.google.com/drive/folders/ctrl-yz-bla",
+      "sizes": [
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL"
+      ],
+      "colors": [
+        {
+          "name": "Jet Black",
+          "hex": "#111827"
+        }
+      ],
+      "stock": 100,
+      "isActive": true,
+      "isFeatured": true,
+      "createdAt": "2026-11-21T09:00:00.000Z",
+      "updatedAt": "2026-11-21T18:00:00.000Z"
+    }
+  ],
+  "marketers": [
+    {
+      "id": "marketer-001",
+      "uid": "demo-marketer-ahmed",
+      "name": "أحمد عادل السعيد",
+      "email": "ahmed.affiliate@gmail.com",
+      "phone": "01012345678",
+      "whatsapp": "01012345678",
+      "affiliateCode": "AHMED-YZ",
+      "walletBalance": 2450,
+      "pendingBalance": 1500,
+      "totalEarned": 14850,
+      "totalWithdrawn": 11120,
+      "ordersCount": 59,
+      "deliveredCount": 49,
+      "deliveryRate": 88,
+      "status": "active",
+      "payoutInfo": {
+        "method": "vodafone_cash",
+        "accountNumber": "01012345678",
+        "accountHolderName": "أحمد عادل السعيد"
+      },
+      "createdAt": "2026-09-15T10:00:00.000Z"
+    },
+    {
+      "id": "marketer-002",
+      "uid": "demo-marketer-sarah",
+      "name": "سارة محمود خليل",
+      "email": "sarah.ads@gmail.com",
+      "phone": "01198765432",
+      "whatsapp": "01198765432",
+      "affiliateCode": "SARAH-SHOP",
+      "walletBalance": 1680,
+      "pendingBalance": 840,
+      "totalEarned": 8900,
+      "totalWithdrawn": 6380,
+      "ordersCount": 34,
+      "deliveredCount": 29,
+      "deliveryRate": 85,
+      "status": "active",
+      "payoutInfo": {
+        "method": "instapay",
+        "accountNumber": "sarah.khalil@instapay",
+        "accountHolderName": "سارة محمود"
+      },
+      "createdAt": "2026-10-01T11:00:00.000Z"
+    },
+    {
+      "id": "marketer-003",
+      "uid": "demo-marketer-tarek",
+      "name": "محمد طارق الديب",
+      "email": "m.tarek.ecommerce@gmail.com",
+      "phone": "01234567890",
+      "whatsapp": "01234567890",
+      "affiliateCode": "TAREK-DEALS",
+      "walletBalance": 820,
+      "pendingBalance": 1450,
+      "totalEarned": 5200,
+      "totalWithdrawn": 2930,
+      "ordersCount": 22,
+      "deliveredCount": 18,
+      "deliveryRate": 82,
+      "status": "active",
+      "payoutInfo": {
+        "method": "bank_transfer",
+        "accountNumber": "EG38000200010000000123456789",
+        "accountHolderName": "محمد طارق الديب",
+        "bankName": "البنك الأهلي المصري (NBE)"
+      },
+      "createdAt": "2026-10-20T14:00:00.000Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": "ord-1001",
+      "orderNumber": "ORD-78219",
+      "affiliateId": "marketer-001",
+      "affiliateName": "أحمد عادل السعيد",
+      "affiliatePhone": "01012345678",
+      "customerName": "كريم حسام الدين",
+      "customerPhone": "01001122334",
+      "customerPhone2": "01223344556",
+      "governorate": "القاهرة",
+      "customerCity": "مدينة نصر - الحي السابع",
+      "customerAddress": "شارع الطيران، عمارة 14 الدور الثالث شقة 6",
+      "notes": "التسليم بعد الساعة 5 مساءً لو تكرمت",
+      "items": [
+        {
+          "productId": "prod-yz-04",
+          "name": "هودي \"لا تأسفن على غدر الزمان\" بالخط العربي الأصيل (بيج / كريمي) - Ctrl YZ",
+          "price": 650,
+          "wholesalePrice": 390,
+          "commission": 260,
+          "quantity": 1,
+          "size": "XL",
+          "color": "Oatmeal Beige",
+          "image": "/products/3bdc26c0-9566-444e-bdb5-e697b2a78c52.jfif"
+        }
+      ],
+      "subtotal": 650,
+      "shippingFee": 45,
+      "totalAmount": 695,
+      "wholesaleTotal": 390,
+      "affiliateCommission": 260,
+      "platformProfit": 130,
+      "status": "delivered",
+      "shippingCompany": "بوسطة (Bosta)",
+      "trackingNumber": "BST-8910245",
+      "statusNotes": "تم التسليم بنجاح وتحصيل المبلغ كاش وإيداع العمولة بالمحفظة",
+      "createdAt": "2026-11-18T10:30:00.000Z",
+      "deliveredAt": "2026-11-20T15:20:00.000Z"
+    },
+    {
+      "id": "ord-1002",
+      "orderNumber": "ORD-78220",
+      "affiliateId": "marketer-001",
+      "affiliateName": "أحمد عادل السعيد",
+      "affiliatePhone": "01012345678",
+      "customerName": "محمود عبد الرازق",
+      "customerPhone": "01123456701",
+      "governorate": "الجيزة",
+      "customerCity": "الدقي",
+      "customerAddress": "شارع مصدق، بجوار بنك مصر عمارة 8 الدور الخامس",
+      "items": [
+        {
+          "productId": "prod-yz-06",
+          "name": "هودي \"Porsche 911 GT3 RS\" موترسبورت ناصع البياض - Ctrl YZ",
+          "price": 650,
+          "wholesalePrice": 390,
+          "commission": 260,
+          "quantity": 1,
+          "size": "L",
+          "color": "Pure White",
+          "image": "/products/4785b824-6501-4579-866a-8f00d0680fdb.jfif"
+        }
+      ],
+      "subtotal": 650,
+      "shippingFee": 45,
+      "totalAmount": 695,
+      "wholesaleTotal": 390,
+      "affiliateCommission": 260,
+      "platformProfit": 130,
+      "status": "shipped",
+      "shippingCompany": "مايلرز (Mylerz)",
+      "trackingNumber": "MYL-449102",
+      "statusNotes": "الشحنة مع المندوب للتسليم اليوم",
+      "createdAt": "2026-11-19T14:10:00.000Z"
+    },
+    {
+      "id": "ord-1003",
+      "orderNumber": "ORD-78221",
+      "affiliateId": "marketer-002",
+      "affiliateName": "سارة محمود خليل",
+      "affiliatePhone": "01198765432",
+      "customerName": "نورهان مصطفى جاد",
+      "customerPhone": "01287654321",
+      "governorate": "الإسكندرية",
+      "customerCity": "سموحة",
+      "customerAddress": "شارع فوزي معاذ، برج الأطباء الدور التاسع",
+      "notes": "متاح المعاينة قبل الاستلام",
+      "items": [
+        {
+          "productId": "prod-yz-08",
+          "name": "هودي \"Cristiano Ronaldo GOAT - Real Madrid\" الدون كولكشن - Ctrl YZ",
+          "price": 650,
+          "wholesalePrice": 390,
+          "commission": 260,
+          "quantity": 1,
+          "size": "M",
+          "color": "Jet Black",
+          "image": "/products/5ac178b8-e13e-4c8a-b20e-b657abdcd021.jfif"
+        }
+      ],
+      "subtotal": 650,
+      "shippingFee": 50,
+      "totalAmount": 700,
+      "wholesaleTotal": 390,
+      "affiliateCommission": 260,
+      "platformProfit": 130,
+      "status": "confirmed",
+      "shippingCompany": "بوسطة (Bosta)",
+      "trackingNumber": "BST-900311",
+      "statusNotes": "تم التأكيد هاتفياً وجاري تجهيز البوليصة بالمخزن",
+      "createdAt": "2026-11-20T09:40:00.000Z"
+    },
+    {
+      "id": "ord-1004",
+      "orderNumber": "ORD-78222",
+      "affiliateId": "marketer-003",
+      "affiliateName": "محمد طارق الديب",
+      "affiliatePhone": "01234567890",
+      "customerName": "طارق زياد العفيفي",
+      "customerPhone": "01511223344",
+      "governorate": "الدقهلية",
+      "customerCity": "المنصورة",
+      "customerAddress": "حي الجامعة، أمام بوابة توشكى",
+      "items": [
+        {
+          "productId": "prod-yz-14",
+          "name": "هودي \"هنا أرض العزة\" مثلث المقاومة بالخط العربي أسود - Ctrl YZ",
+          "price": 650,
+          "wholesalePrice": 390,
+          "commission": 260,
+          "quantity": 1,
+          "size": "2XL",
+          "color": "Jet Black",
+          "image": "/products/8986f785-faf8-4353-8efd-7748d06f990d.jfif"
+        }
+      ],
+      "subtotal": 650,
+      "shippingFee": 55,
+      "totalAmount": 705,
+      "wholesaleTotal": 390,
+      "affiliateCommission": 260,
+      "platformProfit": 130,
+      "status": "pending",
+      "statusNotes": "بانتظار اتصال الكول سنتر لتأكيد الطلب والمقاس",
+      "createdAt": "2026-11-20T16:15:00.000Z"
+    },
+    {
+      "id": "ord-1005",
+      "orderNumber": "ORD-78223",
+      "affiliateId": "marketer-001",
+      "affiliateName": "أحمد عادل السعيد",
+      "affiliatePhone": "01012345678",
+      "customerName": "حازم شريف النجار",
+      "customerPhone": "01099887766",
+      "governorate": "الشرقية",
+      "customerCity": "الزقازيق",
+      "customerAddress": "شارع وادي النيل، فلل المحافظة",
+      "items": [
+        {
+          "productId": "prod-yz-17",
+          "name": "هودي \"الكوفية والملثم\" بالخط العربي الأصيل أسود - Ctrl YZ",
+          "price": 650,
+          "wholesalePrice": 390,
+          "commission": 260,
+          "quantity": 1,
+          "size": "XL",
+          "color": "Jet Black",
+          "image": "/products/b1e692ee-0293-46fd-bf16-ba7cc2580d54.jfif"
+        }
+      ],
+      "subtotal": 650,
+      "shippingFee": 55,
+      "totalAmount": 705,
+      "wholesaleTotal": 390,
+      "affiliateCommission": 260,
+      "platformProfit": 130,
+      "status": "delivered",
+      "shippingCompany": "بوسطة (Bosta)",
+      "trackingNumber": "BST-789123",
+      "statusNotes": "تم التسليم وإيداع العمولة",
+      "createdAt": "2026-11-15T11:00:00.000Z",
+      "deliveredAt": "2026-11-17T14:30:00.000Z"
+    }
+  ],
+  "withdrawals": [
+    {
+      "id": "wd-501",
+      "requestId": "WD-8910",
+      "marketerId": "marketer-001",
+      "marketerName": "أحمد عادل السعيد",
+      "marketerPhone": "01012345678",
+      "amount": 1500,
+      "paymentMethod": "vodafone_cash",
+      "accountDetails": "01012345678",
+      "status": "approved",
+      "transactionReceipt": "TX-9908123",
+      "createdAt": "2026-11-10T12:00:00.000Z",
+      "processedAt": "2026-11-10T14:15:00.000Z"
+    },
+    {
+      "id": "wd-502",
+      "requestId": "WD-8911",
+      "marketerId": "marketer-001",
+      "marketerName": "أحمد عادل السعيد",
+      "marketerPhone": "01012345678",
+      "amount": 2000,
+      "paymentMethod": "vodafone_cash",
+      "accountDetails": "01012345678",
+      "status": "approved",
+      "transactionReceipt": "TX-9934156",
+      "createdAt": "2026-11-16T15:00:00.000Z",
+      "processedAt": "2026-11-16T16:30:00.000Z"
+    },
+    {
+      "id": "wd-503",
+      "requestId": "WD-8912",
+      "marketerId": "marketer-002",
+      "marketerName": "سارة محمود خليل",
+      "marketerPhone": "01198765432",
+      "amount": 1200,
+      "paymentMethod": "instapay",
+      "accountDetails": "sarah.khalil@instapay",
+      "status": "approved",
+      "transactionReceipt": "IP-8812345",
+      "createdAt": "2026-11-18T11:20:00.000Z",
+      "processedAt": "2026-11-18T13:00:00.000Z"
+    }
+  ],
+  "governorates": [
+    {
+      "id": "cairo",
+      "governorate_ar": "القاهرة",
+      "governorate_en": "Cairo",
+      "fee": 45,
+      "deliveryTime": "24-48 ساعة"
+    },
+    {
+      "id": "giza",
+      "governorate_ar": "الجيزة",
+      "governorate_en": "Giza",
+      "fee": 45,
+      "deliveryTime": "24-48 ساعة"
+    },
+    {
+      "id": "alexandria",
+      "governorate_ar": "الإسكندرية",
+      "governorate_en": "Alexandria",
+      "fee": 50,
+      "deliveryTime": "2-3 أيام"
+    },
+    {
+      "id": "qalyubia",
+      "governorate_ar": "القليوبية",
+      "governorate_en": "Qalyubia",
+      "fee": 55,
+      "deliveryTime": "2-3 أيام"
+    },
+    {
+      "id": "sharqia",
+      "governorate_ar": "الشرقية",
+      "governorate_en": "Sharqia",
+      "fee": 55,
+      "deliveryTime": "2-3 أيام"
+    },
+    {
+      "id": "dakahlia",
+      "governorate_ar": "الدقهلية",
+      "governorate_en": "Dakahlia",
+      "fee": 55,
+      "deliveryTime": "2-3 أيام"
+    },
+    {
+      "id": "gharbia",
+      "governorate_ar": "الغربية (طنطا)",
+      "governorate_en": "Gharbia",
+      "fee": 55,
+      "deliveryTime": "2-3 أيام"
+    },
+    {
+      "id": "menofia",
+      "governorate_ar": "المنوفية",
+      "governorate_en": "Menofia",
+      "fee": 55,
+      "deliveryTime": "2-3 أيام"
+    },
+    {
+      "id": "beheira",
+      "governorate_ar": "البحيرة",
+      "governorate_en": "Beheira",
+      "fee": 55,
+      "deliveryTime": "2-3 أيام"
+    },
+    {
+      "id": "kafr_el_sheikh",
+      "governorate_ar": "كفر الشيخ",
+      "governorate_en": "Kafr El Sheikh",
+      "fee": 55,
+      "deliveryTime": "2-3 أيام"
+    },
+    {
+      "id": "damietta",
+      "governorate_ar": "دمياط",
+      "governorate_en": "Damietta",
+      "fee": 55,
+      "deliveryTime": "2-3 أيام"
+    },
+    {
+      "id": "port_said",
+      "governorate_ar": "بورسعيد",
+      "governorate_en": "Port Said",
+      "fee": 55,
+      "deliveryTime": "2-3 أيام"
+    },
+    {
+      "id": "ismailia",
+      "governorate_ar": "الإسماعيلية",
+      "governorate_en": "Ismailia",
+      "fee": 55,
+      "deliveryTime": "2-3 أيام"
+    },
+    {
+      "id": "suez",
+      "governorate_ar": "السويس",
+      "governorate_en": "Suez",
+      "fee": 55,
+      "deliveryTime": "2-3 أيام"
+    },
+    {
+      "id": "fayoum",
+      "governorate_ar": "الفيوم",
+      "governorate_en": "Fayoum",
+      "fee": 65,
+      "deliveryTime": "3-4 أيام"
+    },
+    {
+      "id": "beni_suef",
+      "governorate_ar": "بني سويف",
+      "governorate_en": "Beni Suef",
+      "fee": 65,
+      "deliveryTime": "3-4 أيام"
+    },
+    {
+      "id": "minya",
+      "governorate_ar": "المنيا",
+      "governorate_en": "Minya",
+      "fee": 65,
+      "deliveryTime": "3-4 أيام"
+    },
+    {
+      "id": "assiut",
+      "governorate_ar": "أسيوط",
+      "governorate_en": "Assiut",
+      "fee": 70,
+      "deliveryTime": "3-5 أيام"
+    },
+    {
+      "id": "sohag",
+      "governorate_ar": "سوهاج",
+      "governorate_en": "Sohag",
+      "fee": 70,
+      "deliveryTime": "3-5 أيام"
+    },
+    {
+      "id": "qena",
+      "governorate_ar": "قنا",
+      "governorate_en": "Qena",
+      "fee": 70,
+      "deliveryTime": "3-5 أيام"
+    },
+    {
+      "id": "luxor",
+      "governorate_ar": "الأقصر",
+      "governorate_en": "Luxor",
+      "fee": 70,
+      "deliveryTime": "3-5 أيام"
+    },
+    {
+      "id": "aswan",
+      "governorate_ar": "أسوان",
+      "governorate_en": "Aswan",
+      "fee": 75,
+      "deliveryTime": "4-5 أيام"
+    },
+    {
+      "id": "red_sea",
+      "governorate_ar": "البحر الأحمر (الغردقة)",
+      "governorate_en": "Red Sea",
+      "fee": 85,
+      "deliveryTime": "4-6 أيام"
+    },
+    {
+      "id": "matrouh",
+      "governorate_ar": "مطروح والساحل الشمالي",
+      "governorate_en": "Matrouh",
+      "fee": 85,
+      "deliveryTime": "4-6 أيام"
+    }
+  ],
+  "settings": {
+    "storeName": "Ctrl YZ Official Store & Affiliate Network",
+    "currency": "EGP",
+    "currencySymbol": "ج.م",
+    "contactWhatsApp": "+201012345678",
+    "contactEmail": "support@ctrl-yz.com",
+    "minWithdrawalAmount": 200,
+    "announcement": "كامبين الشتاء الرسمي 2026 — عمولات تبدأ من 220 ج.م وتصل إلى 260 ج.م على كل قطعة هودي",
+    "categories": [
+      "Arabic Calligraphy",
+      "Cars & Motorsport",
+      "Pop Culture",
+      "Sports & Legends",
+      "Music & Artists",
+      "Streetwear"
+    ]
+  },
+  "syncEvents": [
+    {
+      "id": "ev-init-1795294014980",
+      "type": "settings_updated",
+      "timestamp": 1795294014980
+    },
+    {
+      "id": "ev-1795294090016-5xvat",
+      "type": "order_created",
+      "timestamp": 1795294090016,
+      "entityId": "ord-mwqvqxi8"
+    },
+    {
+      "id": "ev-1795294110626-nzri9",
+      "type": "order_deleted",
+      "timestamp": 1795294110626,
+      "entityId": "ord-mwqvqxi8"
+    }
+  ]
+}
