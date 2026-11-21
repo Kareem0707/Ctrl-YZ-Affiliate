@@ -14,6 +14,7 @@ import {
   ArrowRight,
   User,
   Globe,
+  Smartphone,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -53,6 +54,14 @@ export default function TopNavBar() {
       label_en: 'Track Shipment',
       icon: Truck,
       active: pathname === '/track-order',
+    },
+    {
+      href: '/liquid-nav',
+      label_ar: 'الموبايل العائم',
+      label_en: 'Liquid Mobile Nav',
+      icon: Smartphone,
+      active: pathname === '/liquid-nav',
+      badge: 'NEW',
     },
   ];
 
