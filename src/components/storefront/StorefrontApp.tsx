@@ -99,12 +99,14 @@ export default function StorefrontApp() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     if (tab === 'home') setScreen('discover');
+    if (tab === 'favorites') setScreen('discover');
     if (tab === 'cart') setScreen('cart');
+    if (tab === 'transactions') setScreen('trackOrder');
     if (tab === 'profile') setScreen('trackOrder');
   };
 
   return (
-    <div dir={dir} className="max-w-2xl mx-auto min-h-screen bg-canvas relative pb-16">
+    <div dir={dir} className="max-w-2xl mx-auto min-h-screen bg-canvas relative pb-28">
       {/* Certified Affiliate Referral Banner (When visiting through a marketer's link) */}
       {referralMarketer && (
         <div className="bg-emerald-950 text-emerald-300 text-xs py-2 px-4 text-center flex items-center justify-center gap-2 border-b border-emerald-900">
@@ -118,19 +120,11 @@ export default function StorefrontApp() {
       )}
 
       {screen === 'discover' && (
-        <>
-          <DiscoverScreen
-            products={products}
-            loading={loading}
-            onProductClick={handleProductClick}
-          />
-          <BottomNav
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            cartCount={cartCount}
-            onCartClick={handleGoToCart}
-          />
-        </>
+        <DiscoverScreen
+          products={products}
+          loading={loading}
+          onProductClick={handleProductClick}
+        />
       )}
 
       {screen === 'product' && selectedProduct && (
@@ -159,6 +153,16 @@ export default function StorefrontApp() {
       {screen === 'trackOrder' && (
         <OrderTrackingScreen
           onBack={handleBack}
+        />
+      )}
+
+      {/* Floating Concave Liquid Navigation Bar */}
+      {screen !== 'checkout' && (
+        <BottomNav
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          cartCount={cartCount}
+          onCartClick={handleGoToCart}
         />
       )}
     </div>
