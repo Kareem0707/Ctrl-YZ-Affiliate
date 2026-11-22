@@ -60,136 +60,138 @@ export default function ProductDetails({ product, onBack, onAddToCart }: Product
         </span>
       </div>
 
-      <div className="max-w-xl mx-auto px-4 pt-6 space-y-6">
-        {/* Main Product Image Container */}
-        <div className="bg-white rounded-xl border border-border p-4 shadow-subtle">
-          <div className="relative aspect-[1245/1600] w-full overflow-hidden rounded-lg bg-zinc-950 flex items-center justify-center">
-            <img
-              src={product.images?.[selectedImageIndex] || product.images?.[0] || ''}
-              alt={name}
-              className="w-full h-full object-contain"
-            />
-          </div>
-
-          {/* Thumbnails */}
-          {product.images && product.images.length > 1 && (
-            <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-              {product.images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImageIndex(idx)}
-                  className={`w-14 h-14 rounded-md overflow-hidden border transition-all ${
-                    selectedImageIndex === idx ? 'border-ink ring-1 ring-ink' : 'border-border opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
+      <div className="max-w-6xl mx-auto px-4 pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+          {/* Main Product Image Container */}
+          <div className="md:col-span-6 lg:col-span-7 bg-white rounded-xl border border-border p-4 shadow-subtle">
+            <div className="relative aspect-[1245/1600] w-full overflow-hidden rounded-lg bg-zinc-950 flex items-center justify-center">
+              <img
+                src={product.images?.[selectedImageIndex] || product.images?.[0] || ''}
+                alt={name}
+                className="w-full h-full object-contain"
+              />
             </div>
-          )}
-        </div>
 
-        {/* Product Info Block */}
-        <div className="bg-white rounded-xl border border-border p-5 space-y-4 shadow-subtle">
-          <div>
-            <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider block">
-              {product.brand}
-            </span>
-            <h1 className="text-lg sm:text-xl font-bold text-ink mt-1 leading-snug">
-              {name}
-            </h1>
-
-            <div className="flex items-baseline gap-2 mt-3">
-              <span className="text-2xl font-bold text-ink num-tabular">
-                {displayPrice}
-              </span>
-              <span className="text-sm font-medium text-ink-muted">
-                {locale === 'ar' ? 'ج.م' : 'EGP'}
-              </span>
-              {hasSale && (
-                <span className="text-xs text-ink-subtle line-through num-tabular">
-                  {product.price}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Size Selector */}
-          {product.sizes && product.sizes.length > 0 && (
-            <div className="pt-3 border-t border-border">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-ink">
-                  {locale === 'ar' ? 'المقاس المتاح' : 'Available Size'}
-                </span>
-                <span className="text-[11px] text-ink-muted font-medium">
-                  {selectedSize}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {product.sizes.map((s) => (
+            {/* Thumbnails */}
+            {product.images && product.images.length > 1 && (
+              <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+                {product.images.map((img, idx) => (
                   <button
-                    key={s}
-                    onClick={() => setSelectedSize(s)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                      selectedSize === s
-                        ? 'bg-ink text-white border-ink shadow-xs'
-                        : 'bg-white text-ink border-border hover:border-zinc-400'
+                    key={idx}
+                    onClick={() => setSelectedImageIndex(idx)}
+                    className={`w-14 h-14 rounded-md overflow-hidden border transition-all ${
+                      selectedImageIndex === idx ? 'border-ink ring-1 ring-ink' : 'border-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    {s}
+                    <img src={img} alt="" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Colors */}
-          {product.colors && product.colors.length > 0 && (
-            <div className="pt-3 border-t border-border">
-              <span className="text-xs font-semibold text-ink block mb-2">
-                {locale === 'ar' ? 'اللون' : 'Color'}: <span className="font-normal text-ink-muted">{selectedColor}</span>
-              </span>
-              <div className="flex gap-2">
-                {product.colors.map((c) => (
-                  <button
-                    key={c.name}
-                    onClick={() => setSelectedColor(c.name)}
-                    className={`px-3 py-1 rounded-md text-xs border font-medium transition-all ${
-                      selectedColor === c.name
-                        ? 'border-ink bg-zinc-100 text-ink'
-                        : 'border-border text-ink-muted hover:border-zinc-300'
-                    }`}
-                  >
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Description */}
-          <div className="pt-3 border-t border-border">
-            <span className="text-xs font-semibold text-ink block mb-1.5">
-              {locale === 'ar' ? 'تفاصيل ومواصفات المنتج' : 'Specifications & Details'}
-            </span>
-            <p className="text-xs text-ink-muted leading-relaxed">
-              {description}
-            </p>
+            )}
           </div>
 
-          {/* Value Badges */}
-          <div className="pt-3 border-t border-border grid grid-cols-3 gap-2 text-center text-[11px] text-ink-muted">
-            <div className="p-2 rounded-lg bg-zinc-50 border border-border/60">
-              <ShieldCheck size={14} strokeWidth={1.6} className="mx-auto text-ink mb-1" />
-              <span>{locale === 'ar' ? 'معاينة قبل الدفع' : 'Inspect on delivery'}</span>
+          {/* Product Info Block */}
+          <div className="md:col-span-6 lg:col-span-5 bg-white rounded-xl border border-border p-6 space-y-4 shadow-subtle">
+            <div>
+              <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider block">
+                {product.brand}
+              </span>
+              <h1 className="text-xl sm:text-2xl font-bold text-ink mt-1 leading-snug">
+                {name}
+              </h1>
+
+              <div className="flex items-baseline gap-2 mt-3">
+                <span className="text-2xl sm:text-3xl font-bold text-ink num-tabular">
+                  {displayPrice}
+                </span>
+                <span className="text-sm font-medium text-ink-muted">
+                  {locale === 'ar' ? 'ج.م' : 'EGP'}
+                </span>
+                {hasSale && (
+                  <span className="text-xs text-ink-subtle line-through num-tabular">
+                    {product.price}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="p-2 rounded-lg bg-zinc-50 border border-border/60">
-              <Truck size={14} strokeWidth={1.6} className="mx-auto text-ink mb-1" />
-              <span>{locale === 'ar' ? 'شحن سريع' : 'Fast Shipping'}</span>
+
+            {/* Size Selector */}
+            {product.sizes && product.sizes.length > 0 && (
+              <div className="pt-3 border-t border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-ink">
+                    {locale === 'ar' ? 'المقاس المتاح' : 'Available Size'}
+                  </span>
+                  <span className="text-[11px] text-ink-muted font-medium">
+                    {selectedSize}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {product.sizes.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setSelectedSize(s)}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                        selectedSize === s
+                          ? 'bg-ink text-white border-ink shadow-xs'
+                          : 'bg-white text-ink border-border hover:border-zinc-400'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Colors */}
+            {product.colors && product.colors.length > 0 && (
+              <div className="pt-3 border-t border-border">
+                <span className="text-xs font-semibold text-ink block mb-2">
+                  {locale === 'ar' ? 'اللون' : 'Color'}: <span className="font-normal text-ink-muted">{selectedColor}</span>
+                </span>
+                <div className="flex gap-2">
+                  {product.colors.map((c) => (
+                    <button
+                      key={c.name}
+                      onClick={() => setSelectedColor(c.name)}
+                      className={`px-3 py-1 rounded-md text-xs border font-medium transition-all ${
+                        selectedColor === c.name
+                          ? 'border-ink bg-zinc-100 text-ink'
+                          : 'border-border text-ink-muted hover:border-zinc-300'
+                      }`}
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Description */}
+            <div className="pt-3 border-t border-border">
+              <span className="text-xs font-semibold text-ink block mb-1.5">
+                {locale === 'ar' ? 'تفاصيل ومواصفات المنتج' : 'Specifications & Details'}
+              </span>
+              <p className="text-xs text-ink-muted leading-relaxed">
+                {description}
+              </p>
             </div>
-            <div className="p-2 rounded-lg bg-zinc-50 border border-border/60">
-              <RotateCcw size={14} strokeWidth={1.6} className="mx-auto text-ink mb-1" />
-              <span>{locale === 'ar' ? 'استبدال فوري' : 'Easy Returns'}</span>
+
+            {/* Value Badges */}
+            <div className="pt-3 border-t border-border grid grid-cols-3 gap-2 text-center text-[11px] text-ink-muted">
+              <div className="p-2.5 rounded-lg bg-zinc-50 border border-border/60">
+                <ShieldCheck size={15} strokeWidth={1.6} className="mx-auto text-ink mb-1" />
+                <span>{locale === 'ar' ? 'معاينة قبل الدفع' : 'Inspect on delivery'}</span>
+              </div>
+              <div className="p-2.5 rounded-lg bg-zinc-50 border border-border/60">
+                <Truck size={15} strokeWidth={1.6} className="mx-auto text-ink mb-1" />
+                <span>{locale === 'ar' ? 'شحن سريع' : 'Fast Shipping'}</span>
+              </div>
+              <div className="p-2.5 rounded-lg bg-zinc-50 border border-border/60">
+                <RotateCcw size={15} strokeWidth={1.6} className="mx-auto text-ink mb-1" />
+                <span>{locale === 'ar' ? 'استبدال فوري' : 'Easy Returns'}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -197,7 +199,7 @@ export default function ProductDetails({ product, onBack, onAddToCart }: Product
 
       {/* Sticky Bottom Add to Cart CTA */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-border py-3 px-4 z-40">
-        <div className="max-w-xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <div>
             <span className="text-[10px] text-ink-muted block">
               {locale === 'ar' ? 'السعر الإجمالي' : 'Total Price'}

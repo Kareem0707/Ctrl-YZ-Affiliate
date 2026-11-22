@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastModified": 1795294110627,
+  "lastModified": 1795381789690,
   "products": [
     {
       "id": "prod-yz-01",
@@ -897,6 +897,41 @@
   ],
   "marketers": [
     {
+      "id": "marketer-mwsbwgu5",
+      "uid": "user-1795381688376",
+      "name": "عمر خالد منصور الشريف",
+      "email": "omar.sharif.affiliate@gmail.com",
+      "phone": "01099887766",
+      "whatsapp": "01099887766",
+      "nationalId": "29901011234567",
+      "city": "الإسكندرية",
+      "marketingChannels": [
+        "صفحة فيسبوك (Facebook Page)",
+        "تيك توك (TikTok Shop / Ads)",
+        "إنستغرام (Instagram Page)"
+      ],
+      "channelLinks": "https://instagram.com/omar.hoodies.eg",
+      "experienceLevel": "expert",
+      "expectedMonthlyOrders": "50-100",
+      "affiliateCode": "YZ-عمر-213",
+      "walletBalance": 0,
+      "pendingBalance": 0,
+      "totalEarned": 0,
+      "totalWithdrawn": 0,
+      "ordersCount": 0,
+      "deliveredCount": 0,
+      "deliveryRate": 100,
+      "status": "active",
+      "payoutInfo": {
+        "method": "vodafone_cash",
+        "accountNumber": "01099887766",
+        "accountHolderName": "عمر خالد منصور"
+      },
+      "createdAt": "2026-11-22T21:08:08.381Z",
+      "reviewedAt": "2026-11-22T21:09:49.690Z",
+      "reviewedBy": "الإدارة العامة"
+    },
+    {
       "id": "marketer-001",
       "uid": "demo-marketer-ahmed",
       "name": "أحمد عادل السعيد",
@@ -1400,6 +1435,18 @@
       "type": "order_deleted",
       "timestamp": 1795294110626,
       "entityId": "ord-mwqvqxi8"
+    },
+    {
+      "id": "ev-1795381688381-ky6qy",
+      "type": "marketer_saved",
+      "timestamp": 1795381688381,
+      "entityId": "marketer-mwsbwgu5"
+    },
+    {
+      "id": "ev-1795381789690-on554",
+      "type": "marketer_saved",
+      "timestamp": 1795381789690,
+      "entityId": "marketer-mwsbwgu5"
     }
   ]
 }

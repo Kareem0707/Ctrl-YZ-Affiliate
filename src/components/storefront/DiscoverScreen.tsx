@@ -82,14 +82,14 @@ export default function DiscoverScreen({ onProductClick, products, loading }: Di
   return (
     <div className="pb-28 min-h-screen">
       {/* Brand Campaign Hero Card (Black, White & Electric Blue Identity) */}
-      <div className="px-5 pt-5 pb-2">
-        <div className="relative overflow-hidden rounded-2xl bg-[#030303] text-white border border-zinc-800 shadow-elevated p-6 sm:p-8">
+      <div className="pt-3 pb-2">
+        <div className="relative overflow-hidden rounded-2xl bg-[#030303] text-white border border-zinc-800 shadow-elevated p-6 sm:p-8 lg:p-10">
           {/* Subtle Ambient Electric Blue Glow */}
-          <div className="absolute top-0 left-0 w-80 h-80 bg-brand/20 rounded-full blur-3xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute bottom-0 right-0 w-64 h-64 bg-[#0084FF]/10 rounded-full blur-2xl pointer-events-none translate-x-1/3 translate-y-1/3" />
+          <div className="absolute top-0 left-0 w-96 h-96 bg-brand/20 rounded-full blur-3xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-[#0084FF]/10 rounded-full blur-2xl pointer-events-none translate-x-1/3 translate-y-1/3" />
 
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="max-w-xl">
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div className="max-w-3xl">
               {/* Campaign Tag */}
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] font-medium text-white mb-3">
                 <span className="w-2 h-2 rounded-full bg-brand shadow-[0_0_8px_#0258ED] animate-pulse" />
@@ -162,7 +162,7 @@ export default function DiscoverScreen({ onProductClick, products, loading }: Di
       </div>
 
       {/* Editorial Store Header */}
-      <div className="px-5 pt-6 pb-5">
+      <div className="pt-6 pb-5">
         <div className="flex flex-col gap-1.5">
           <span className="text-[11px] font-semibold tracking-wider text-ink-muted uppercase">
             {locale === 'ar' ? 'المتجر الرسمي المباشر' : 'Official Collection'}
@@ -170,7 +170,7 @@ export default function DiscoverScreen({ onProductClick, products, loading }: Di
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
             {locale === 'ar' ? 'تشكيلة الشتاء العصرية' : 'Modern Winter Essentials'}
           </h1>
-          <p className="text-xs text-ink-muted max-w-lg mt-0.5">
+          <p className="text-xs text-ink-muted max-w-2xl mt-0.5">
             {locale === 'ar'
               ? 'خامات قطنية وحرارية فاخرة، تقفيل خياطة متقن، مع ميزة المعاينة قبل الاستلام والدفع كاش عند الباب.'
               : 'Premium heavyweight cottons, precision tailoring, with cash on delivery and inspection upon arrival.'}
@@ -178,7 +178,7 @@ export default function DiscoverScreen({ onProductClick, products, loading }: Di
         </div>
 
         {/* Search Bar */}
-        <div className="mt-5 relative">
+        <div className="mt-5 relative max-w-xl">
           <Search size={16} strokeWidth={1.6} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-muted" />
           <input
             type="text"
@@ -211,7 +211,7 @@ export default function DiscoverScreen({ onProductClick, products, loading }: Di
       </div>
 
       {/* Products Grid */}
-      <div className="px-5">
+      <div className="pt-2">
         <div className="flex items-center justify-between mb-3 text-xs text-ink-muted">
           <span>{locale === 'ar' ? `المنتجات المتاحة (${filteredProducts.length})` : `Available items (${filteredProducts.length})`}</span>
           <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
@@ -220,9 +220,9 @@ export default function DiscoverScreen({ onProductClick, products, loading }: Di
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-72 rounded-xl bg-zinc-100 animate-pulse border border-border" />
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="h-80 rounded-xl bg-zinc-100 animate-pulse border border-border" />
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
@@ -236,7 +236,7 @@ export default function DiscoverScreen({ onProductClick, products, loading }: Di
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {filteredProducts.map((product) => {
               const hasDiscount = product.salePrice && product.salePrice < product.price;
               const effectivePrice = hasDiscount ? product.salePrice : product.price;

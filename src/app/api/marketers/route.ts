@@ -51,6 +51,12 @@ export async function POST(request: NextRequest) {
       email: data.email || 'marketer@example.com',
       phone: data.phone || '',
       whatsapp: data.whatsapp || data.phone || '',
+      nationalId: data.nationalId || '',
+      city: data.city || '',
+      marketingChannels: data.marketingChannels || [],
+      channelLinks: data.channelLinks || '',
+      experienceLevel: data.experienceLevel || 'beginner',
+      expectedMonthlyOrders: data.expectedMonthlyOrders || '20-50',
       affiliateCode: (data.affiliateCode || `AFF-${Math.floor(100 + Math.random() * 900)}`).toUpperCase(),
       walletBalance: 0,
       pendingBalance: 0,
@@ -59,7 +65,7 @@ export async function POST(request: NextRequest) {
       ordersCount: 0,
       deliveredCount: 0,
       deliveryRate: 100,
-      status: 'active',
+      status: data.status || 'pending',
       payoutInfo: data.payoutInfo || {
         method: 'vodafone_cash',
         accountNumber: data.phone || '',
@@ -89,7 +95,19 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Marketer not found' }, { status: 404 });
     }
 
-    if (action === 'toggle_status') {
+    if (action === 'approve') {
+      marketer.status = 'active';
+      if (updates.affiliateCode) {
+        marketer.affiliateCode = updates.affiliateCode.trim().toUpperCase();
+      }
+      marketer.reviewedAt = new Date().toISOString();
+      marketer.reviewedBy = updates.reviewedBy || 'الإدارة العامة';
+    } else if (action === 'reject') {
+      marketer.status = 'rejected';
+      marketer.rejectionReason = updates.rejectionReason || 'لم يتم استيفاء شروط الانضمام المطلوبة';
+      marketer.reviewedAt = new Date().toISOString();
+      marketer.reviewedBy = updates.reviewedBy || 'الإدارة العامة';
+    } else if (action === 'toggle_status') {
       marketer.status = marketer.status === 'active' ? 'suspended' : 'active';
     } else {
       Object.assign(marketer, updates);

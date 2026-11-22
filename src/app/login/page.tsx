@@ -1,266 +1,327 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   TrendingUp,
   ShieldCheck,
   UserPlus,
   LogIn,
-  CheckCircle,
-  Smartphone,
-  CreditCard,
-  Building,
+  CheckCircle2,
+  KeyRound,
+  ExternalLink,
   Sparkles,
+  HelpCircle,
+  Clock,
+  ArrowRight,
+  BookOpen,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getMarketers } from '@/lib/dataService';
+import type { Marketer } from '@/lib/types';
+import { loadGoogleScript, GOOGLE_CLIENT_ID, isGoogleAuthReady, decodeGoogleCredential } from '@/lib/googleAuth';
+import GoogleCredentialsGuideModal from '@/components/auth/GoogleCredentialsGuideModal';
+import MarketerOnboardingModal from '@/components/auth/MarketerOnboardingModal';
+import MarketerGuideModal from '@/components/auth/MarketerGuideModal';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loginAsDemoAdmin, loginAsDemoMarketer, registerMarketer, signInWithGoogle } = useAuth();
+  const { loginAsDemoAdmin, loginAsDemoMarketer } = useAuth();
   const { locale } = useLanguage();
 
-  const [mode, setMode] = useState<'register' | 'login'>('register');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [payoutMethod, setPayoutMethod] = useState<'vodafone_cash' | 'instapay' | 'bank_transfer'>('vodafone_cash');
-  const [payoutAccount, setPayoutAccount] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [mode, setMode] = useState<'google' | 'demo'>('google');
+  const [guideModalOpen, setGuideModalOpen] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [platformGuideOpen, setPlatformGuideOpen] = useState(false);
+  const [currentMarketerData, setCurrentMarketerData] = useState<Marketer | null>(null);
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !phone.trim()) return;
+  const [googleInitialData, setGoogleInitialData] = useState<{
+    name?: string;
+    email?: string;
+    uid?: string;
+  }>({});
 
-    setLoading(true);
+  const [googleStatusMessage, setGoogleStatusMessage] = useState<string | null>(null);
+  const [isProcessingGoogle, setIsProcessingGoogle] = useState(false);
+
+  // Initialize Google Identity Services if client ID is configured
+  useEffect(() => {
+    let isMounted = true;
+
+    async function initGSI() {
+      if (isGoogleAuthReady) {
+        const loaded = await loadGoogleScript();
+        if (loaded && window.google?.accounts?.id && isMounted) {
+          window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: (response: { credential: string }) => {
+              handleGoogleCredential(response.credential);
+            },
+            auto_select: false,
+          });
+
+          const btnContainer = document.getElementById('google-btn-container');
+          if (btnContainer) {
+            btnContainer.innerHTML = '';
+            window.google.accounts.id.renderButton(btnContainer, {
+              theme: 'outline',
+              size: 'large',
+              shape: 'pill',
+              logo_alignment: 'center',
+              width: 320,
+              text: 'continue_with',
+            });
+          }
+        }
+      }
+    }
+
+    initGSI();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleGoogleCredential = async (credential: string) => {
+    setIsProcessingGoogle(true);
+    setGoogleStatusMessage('جاري التحقق من حساب Google...');
+
     try {
-      await registerMarketer({
-        name: name.trim(),
-        phone: phone.trim(),
-        email: email.trim() || `${phone.trim()}@affiliate.com`,
-        whatsapp: phone.trim(),
-        payoutMethod,
-        payoutAccount: payoutAccount.trim() || phone.trim(),
-      });
-      setSuccess(true);
-      setTimeout(() => {
-        router.push('/affiliate');
-      }, 1500);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+      const profile = decodeGoogleCredential(credential);
+      if (!profile) {
+        throw new Error('تعذر قراءة بيانات حساب Google');
+      }
+
+      await processGoogleProfile(profile.name, profile.email, profile.sub);
+    } catch (err: any) {
+      setGoogleStatusMessage(err?.message || 'حدث خطأ أثناء تسجيل الدخول');
+      setIsProcessingGoogle(false);
     }
   };
 
+  const processGoogleProfile = async (name: string, email: string, uid: string) => {
+    const marketers = await getMarketers();
+    const existing = marketers.find((m) => m.email.toLowerCase() === email.toLowerCase() || m.uid === uid);
+
+    if (existing) {
+      setCurrentMarketerData(existing);
+      if (existing.status === 'active') {
+        setGoogleStatusMessage(`مرحباً بك مجدداً يا ${existing.name}! جاري الدخول لبوابة المسوقين...`);
+        await loginAsDemoMarketer(existing.id);
+        setTimeout(() => {
+          router.push('/affiliate');
+        }, 1200);
+      } else if (existing.status === 'pending') {
+        setGoogleStatusMessage(`طلبك قيد المراجعة الإدارية. يمكنك الاطلاع على دليل المنصة وطريقة الاستخدام.`);
+        setPlatformGuideOpen(true);
+        setIsProcessingGoogle(false);
+      } else {
+        setGoogleStatusMessage('تم إيقاف هذا الحساب من قبل الإدارة. يرجى التواصل مع الدعم الفني.');
+        setIsProcessingGoogle(false);
+      }
+    } else {
+      // New marketer: open full onboarding wizard
+      setGoogleInitialData({ name, email, uid });
+      setOnboardingOpen(true);
+      setIsProcessingGoogle(false);
+      setGoogleStatusMessage(null);
+    }
+  };
+
+  // One-Click Google Testing Fallback (when developer hasn't inserted client ID yet)
+  const handleTestGoogleLogin = async () => {
+    setIsProcessingGoogle(true);
+    setGoogleStatusMessage('جاري تسجيل الدخول بحساب Google التجريبي...');
+
+    setTimeout(async () => {
+      const demoEmail = 'kareem.marketer@gmail.com';
+      const demoName = 'كريم سامح النجار';
+      const demoUid = 'google-oauth-demo-uid-99';
+
+      await processGoogleProfile(demoName, demoEmail, demoUid);
+    }, 800);
+  };
+
+  const handleOnboardingSuccess = (newMarketer: Marketer) => {
+    setOnboardingOpen(false);
+    setCurrentMarketerData(newMarketer);
+    setPlatformGuideOpen(true);
+  };
+
   return (
-    <div className="min-h-[85vh] flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-xl w-full max-w-md p-6 sm:p-8">
+    <div className="min-h-[88vh] flex items-center justify-center p-4 bg-canvas selection:bg-brand selection:text-white">
+      <div
+        dir="rtl"
+        className="bg-white rounded-3xl border border-border shadow-elevated w-full max-w-lg p-6 sm:p-8 space-y-6"
+      >
         {/* Brand Header */}
-        <div className="text-center mb-6">
-          <div className="flex justify-center mb-4">
-            <img
-              src="/ctrl-logo-light.png"
-              alt="Ctrl YZ"
-              className="h-10 w-auto object-contain"
-            />
+        <div className="text-center">
+          <div className="flex justify-center mb-3">
+            <Link href="/" className="inline-block">
+              <img
+                src="/ctrl-logo-light.png"
+                alt="Ctrl YZ"
+                className="h-9 sm:h-10 w-auto object-contain"
+              />
+            </Link>
           </div>
-          <h2 className="text-2xl font-black text-gray-900">
-            {mode === 'register' ? 'انضم كمسوق في Ctrl YZ' : 'تسجيل الدخول للمنصة'}
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            ابدأ البيع بدون رأس مال واحصل على عمولات يومية
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[11px] font-semibold text-brand mb-2">
+            <Sparkles size={12} />
+            <span>بوابة المسوقين الرسمية 2026</span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-ink tracking-tight">
+            تسجيل دخول المسوقين (Google OAuth)
+          </h1>
+          <p className="text-xs text-ink-muted mt-1 max-w-sm mx-auto">
+            انضم الآن وابدأ بيع كولكشن الشتاء بعمولات يومية من 220 إلى 260 ج.م على كل قطعة
           </p>
         </div>
 
-        {/* Toggle Mode Tabs */}
-        <div className="grid grid-cols-2 p-1 bg-gray-100 rounded-2xl mb-6 text-xs font-black">
+        {/* Status Alert */}
+        {googleStatusMessage && (
+          <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-center gap-2">
+            <Clock size={16} className="text-blue-600 flex-shrink-0 animate-spin" />
+            <span>{googleStatusMessage}</span>
+          </div>
+        )}
+
+        {/* PRIMARY AUTH SECTION: GOOGLE SIGN-IN */}
+        <div className="space-y-4 pt-1">
+          {/* Real Google GSI Container (if loaded) */}
+          <div id="google-btn-container" className="flex justify-center empty:hidden" />
+
+          {/* Standard Primary Google Button */}
           <button
-            onClick={() => setMode('register')}
-            className={`py-2.5 rounded-xl transition-all ${
-              mode === 'register' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
-            }`}
+            onClick={isGoogleAuthReady && window.google?.accounts?.id ? undefined : handleTestGoogleLogin}
+            disabled={isProcessingGoogle}
+            className="w-full py-3.5 px-4 rounded-xl border border-border bg-white hover:bg-neutral-50 active:scale-99 text-ink font-bold text-xs flex items-center justify-center gap-3 transition-all shadow-subtle group"
           >
-            مسوق جديد (تسجيل مجاني)
+            {/* Google Multi-colored SVG Logo */}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                fill="#4285F4"
+              />
+              <path
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                fill="#34A853"
+              />
+              <path
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                fill="#FBBC05"
+              />
+              <path
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                fill="#EA4335"
+              />
+            </svg>
+            <span>
+              {isGoogleAuthReady
+                ? 'تسجيل الدخول الفوري بحساب Google'
+                : 'تسجيل الدخول بواسطة Google (تجربة سريعة)'}
+            </span>
           </button>
+
+          {/* New Marketer Manual Registration Trigger */}
           <button
-            onClick={() => setMode('login')}
-            className={`py-2.5 rounded-xl transition-all ${
-              mode === 'login' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
-            }`}
+            onClick={() => setOnboardingOpen(true)}
+            className="w-full py-3.5 px-4 rounded-xl bg-ink hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-99"
           >
-            تسجيل الدخول السريع
+            <UserPlus size={16} />
+            <span>تسجيل مسوق جديد وتعبئة استمارة الانضمام</span>
+          </button>
+
+          {/* Guide to Get Google Client ID */}
+          <div className="pt-2 text-center">
+            <button
+              onClick={() => setGuideModalOpen(true)}
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:underline transition"
+            >
+              <KeyRound size={13} />
+              <span>خطوات الحصول على Google Client ID الخاص بك وتفعيله</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center text-[11px]">
+            <span className="bg-white px-3 text-ink-muted">أو المعاينة السريعة بالحسابات المجهزة</span>
+          </div>
+        </div>
+
+        {/* Demo Fast Logins */}
+        <div className="space-y-2.5">
+          <button
+            onClick={async () => {
+              await loginAsDemoMarketer('marketer-001');
+              router.push('/affiliate');
+            }}
+            className="w-full p-3.5 rounded-xl border border-border bg-neutral-50 hover:bg-emerald-50 hover:border-emerald-200 text-right flex items-center justify-between transition-colors group"
+          >
+            <div>
+              <span className="font-bold text-xs text-ink block group-hover:text-emerald-900">
+                أحمد عادل (مسوق نشط معتمد)
+              </span>
+              <span className="text-[11px] text-ink-muted font-mono">كود: AHMED-YZ • رصيد متاح: 2,450 ج.م</span>
+            </div>
+            <TrendingUp size={16} className="text-emerald-600" />
+          </button>
+
+          <button
+            onClick={() => {
+              loginAsDemoAdmin();
+              router.push('/admin');
+            }}
+            className="w-full p-3.5 rounded-xl border border-border bg-neutral-50 hover:bg-purple-50 hover:border-purple-200 text-right flex items-center justify-between transition-colors group"
+          >
+            <div>
+              <span className="font-bold text-xs text-ink block group-hover:text-purple-900">
+                دخول كإدارة المنصة (لوحة الأدمن)
+              </span>
+              <span className="text-[11px] text-ink-muted">صلاحيات كاملة لمراجعة وقبول المسوقين والطلبات</span>
+            </div>
+            <ShieldCheck size={16} className="text-purple-600" />
           </button>
         </div>
 
-        {success ? (
-          <div className="p-6 bg-emerald-50 rounded-2xl text-center space-y-2 border border-emerald-200">
-            <CheckCircle size={40} className="text-emerald-600 mx-auto" />
-            <h4 className="text-base font-bold text-emerald-900">تم تسجيل حسابك بنجاح!</h4>
-            <p className="text-xs text-emerald-700">جاري نقلك إلى لوحة تحكم المسوق...</p>
-          </div>
-        ) : mode === 'register' ? (
-          <form onSubmit={handleRegister} className="space-y-4 text-xs font-bold text-gray-700">
-            <div>
-              <label className="block mb-1">الاسم الكامل *</label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="محمد عادل الشريف"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-normal focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1">رقم الهاتف (الواتساب) *</label>
-              <input
-                type="tel"
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="010XXXXXXXX"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-mono focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1">البريد الإلكتروني (اختياري)</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="marketer@gmail.com"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-normal focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1">طريقة استلام أرباحك المفضلة</label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPayoutMethod('vodafone_cash')}
-                  className={`p-2 rounded-xl border text-[11px] font-bold flex flex-col items-center gap-1 ${
-                    payoutMethod === 'vodafone_cash' ? 'bg-red-50 border-red-500 text-red-700' : 'border-gray-200 text-gray-600'
-                  }`}
-                >
-                  <Smartphone size={16} />
-                  <span>فودافون كاش</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPayoutMethod('instapay')}
-                  className={`p-2 rounded-xl border text-[11px] font-bold flex flex-col items-center gap-1 ${
-                    payoutMethod === 'instapay' ? 'bg-purple-50 border-purple-500 text-purple-700' : 'border-gray-200 text-gray-600'
-                  }`}
-                >
-                  <CreditCard size={16} />
-                  <span>انستاباي</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPayoutMethod('bank_transfer')}
-                  className={`p-2 rounded-xl border text-[11px] font-bold flex flex-col items-center gap-1 ${
-                    payoutMethod === 'bank_transfer' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'border-gray-200 text-gray-600'
-                  }`}
-                >
-                  <Building size={16} />
-                  <span>تحويل بنكي</span>
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block mb-1">رقم المحفظة أو عنوان انستاباي</label>
-              <input
-                type="text"
-                value={payoutAccount}
-                onChange={(e) => setPayoutAccount(e.target.value)}
-                placeholder="010XXXXXXXX"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-mono focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-4 bg-primary hover:bg-primary-dark text-white font-black text-sm rounded-2xl shadow-xl shadow-primary/30 active:scale-95 transition-all mt-4"
-            >
-              {loading ? 'جاري إنشاء الحساب...' : 'إنشاء حساب المسوق والبدء الآن'}
-            </button>
-          </form>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider text-center">
-              اختر أحد الحسابات التجريبية للدخول المباشر:
-            </p>
-
-            <button
-              onClick={() => {
-                loginAsDemoMarketer('marketer-001');
-                router.push('/affiliate');
-              }}
-              className="w-full p-4 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-emerald-50 hover:border-emerald-300 text-right flex items-center justify-between transition-colors group"
-            >
-              <div>
-                <span className="font-bold text-sm text-gray-900 block group-hover:text-emerald-800">
-                  أحمد عادل (أعلى مسوق مبيعاً)
-                </span>
-                <span className="text-[11px] text-gray-400">كود الإحالة: AHMED-YZ • رصيد: 2,450 ج.م</span>
-              </div>
-              <TrendingUp size={20} className="text-emerald-600" />
-            </button>
-
-            <button
-              onClick={() => {
-                loginAsDemoMarketer('marketer-002');
-                router.push('/affiliate');
-              }}
-              className="w-full p-4 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-emerald-50 hover:border-emerald-300 text-right flex items-center justify-between transition-colors group"
-            >
-              <div>
-                <span className="font-bold text-sm text-gray-900 block group-hover:text-emerald-800">
-                  سارة محمود (مسوقة إنستغرام)
-                </span>
-                <span className="text-[11px] text-gray-400">كود الإحالة: SARAH-SHOP • رصيد: 1,680 ج.م</span>
-              </div>
-              <TrendingUp size={20} className="text-emerald-600" />
-            </button>
-
-            <button
-              onClick={() => {
-                loginAsDemoAdmin();
-                router.push('/admin');
-              }}
-              className="w-full p-4 rounded-2xl border border-purple-200 bg-purple-50/60 hover:bg-purple-100 text-right flex items-center justify-between transition-colors"
-            >
-              <div>
-                <span className="font-bold text-sm text-purple-900 block">
-                  دخول كأدمن المنصة (Master Admin)
-                </span>
-                <span className="text-[11px] text-purple-600">صلاحيات كاملة للمنتجات، الشحن، والتحويلات</span>
-              </div>
-              <ShieldCheck size={20} className="text-purple-600" />
-            </button>
-
-            <div className="pt-2">
-              <button
-                onClick={async () => {
-                  await signInWithGoogle();
-                  router.push('/affiliate');
-                }}
-                className="w-full py-3 bg-white border border-gray-300 rounded-2xl font-bold text-xs text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-2 transition-colors"
-              >
-                <span>تسجيل الدخول بواسطة Google (Firebase)</span>
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Back Link */}
+        <div className="pt-2 text-center border-t border-border">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs text-ink-muted hover:text-ink transition"
+          >
+            <span>العودة للمتجر الرئيسي</span>
+            <ArrowRight size={13} className="rotate-180" />
+          </Link>
+        </div>
       </div>
+
+      {/* MODAL 1: Google Client ID Setup Guide */}
+      <GoogleCredentialsGuideModal
+        isOpen={guideModalOpen}
+        onClose={() => setGuideModalOpen(false)}
+      />
+
+      {/* MODAL 2: Full Marketer Onboarding Form */}
+      <MarketerOnboardingModal
+        isOpen={onboardingOpen}
+        onClose={() => setOnboardingOpen(false)}
+        initialData={googleInitialData}
+        onSuccess={handleOnboardingSuccess}
+      />
+
+      {/* MODAL 3: Comprehensive Marketer Guide & Walkthrough */}
+      <MarketerGuideModal
+        isOpen={platformGuideOpen}
+        onClose={() => setPlatformGuideOpen(false)}
+        marketer={currentMarketerData}
+      />
     </div>
   );
 }

@@ -53,6 +53,7 @@ export default function AdminDashboard({
   const deliveryRate = orders.length > 0 ? Math.round((deliveredOrders.length / orders.length) * 100) : 0;
   const pendingOrders = orders.filter((o) => o.status === 'pending');
   const pendingWithdrawals = withdrawals.filter((w) => w.status === 'pending');
+  const pendingMarketers = marketers.filter((m) => m.status === 'pending');
 
   const recentOrders = orders.slice(0, 5);
 
@@ -75,11 +76,20 @@ export default function AdminDashboard({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {pendingMarketers.length > 0 && (
+            <button
+              onClick={() => onNavigateTab('marketers')}
+              className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold hover:bg-amber-100 transition-colors flex items-center gap-1.5 num-tabular"
+            >
+              <Users size={14} strokeWidth={1.6} />
+              <span>{pendingMarketers.length} طلب انضمام مسوق جديد</span>
+            </button>
+          )}
           {pendingWithdrawals.length > 0 && (
             <button
               onClick={() => onNavigateTab('withdrawals')}
-              className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold hover:bg-amber-100 transition-colors flex items-center gap-1.5 num-tabular"
+              className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 text-xs font-semibold hover:bg-blue-100 transition-colors flex items-center gap-1.5 num-tabular"
             >
               <AlertCircle size={14} strokeWidth={1.6} />
               <span>{pendingWithdrawals.length} طلب سحب بانتظار التحويل</span>

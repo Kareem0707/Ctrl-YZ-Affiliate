@@ -59,22 +59,23 @@ export default function OrderTrackingScreen({ onBack }: OrderTrackingScreenProps
   };
 
   return (
-    <div className="min-h-screen pb-10 bg-canvas">
-      {/* Header */}
-      <div className="px-5 pt-12 pb-3 flex items-center gap-3 bg-white border-b border-border">
-        <button
-          onClick={onBack}
-          className="w-9 h-9 rounded-lg bg-neutral-50 border border-border flex items-center justify-center hover:bg-neutral-100 transition-colors"
-        >
-          <ArrowLeft size={18} strokeWidth={1.6} className="text-neutral-700" />
-        </button>
-        <h1 className="text-base font-bold text-ink">
-          {t('orderTracking.trackOrder')}
-        </h1>
-      </div>
+    <div className="min-h-screen pb-16 bg-canvas">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="px-5 pt-8 pb-3 flex items-center gap-3 bg-white border-b border-border rounded-b-xl">
+          <button
+            onClick={onBack}
+            className="w-9 h-9 rounded-lg bg-neutral-50 border border-border flex items-center justify-center hover:bg-neutral-100 transition-colors"
+          >
+            <ArrowLeft size={18} strokeWidth={1.6} className="text-neutral-700" />
+          </button>
+          <h1 className="text-base font-bold text-ink">
+            {t('orderTracking.trackOrder')}
+          </h1>
+        </div>
 
-      {/* Search input */}
-      <div className="px-5 mt-5">
+        {/* Search input */}
+        <div className="px-5 mt-5">
         <label className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wide mb-1.5 block">
           {t('orderTracking.orderNumber')}
         </label>
@@ -253,6 +254,7 @@ export default function OrderTrackingScreen({ onBack }: OrderTrackingScreenProps
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

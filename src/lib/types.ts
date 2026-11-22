@@ -101,6 +101,8 @@ export interface MarketerPayoutInfo {
   bankName?: string;
 }
 
+export type MarketerStatus = 'active' | 'pending' | 'rejected' | 'suspended';
+
 export interface Marketer {
   id: string;
   uid: string;
@@ -108,6 +110,15 @@ export interface Marketer {
   email: string;
   phone: string;
   whatsapp: string;
+  nationalId?: string; // الرقم القومي (14 رقم للتحقق المالي)
+  city?: string; // المحافظة / المدينة
+  marketingChannels?: string[]; // Facebook, TikTok, Instagram, Telegram, Website, WhatsApp, Other
+  channelLinks?: string; // روابط الصفحات أو القنوات
+  experienceLevel?: 'beginner' | 'intermediate' | 'expert'; // مستوى الخبرة
+  expectedMonthlyOrders?: string; // حجم المبيعات المتوقع شهرياً
+  rejectionReason?: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
   affiliateCode: string;
   walletBalance: number; // Available for withdrawal
   pendingBalance: number; // Pending with shipping
@@ -116,7 +127,7 @@ export interface Marketer {
   ordersCount: number;
   deliveredCount: number;
   deliveryRate: number; // percentage (e.g. 85%)
-  status: 'active' | 'suspended';
+  status: MarketerStatus;
   payoutInfo: MarketerPayoutInfo;
   createdAt: string;
 }

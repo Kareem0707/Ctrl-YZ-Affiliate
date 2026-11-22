@@ -81,6 +81,7 @@ export default function AdminPage() {
 
   const pendingWithdrawalsCount = withdrawals.filter((w) => w.status === 'pending').length;
   const pendingOrdersCount = orders.filter((o) => o.status === 'pending').length;
+  const pendingMarketersCount = marketers.filter((m) => m.status === 'pending').length;
 
   return (
     <div className="min-h-screen bg-canvas pb-24">
@@ -138,7 +139,13 @@ export default function AdminPage() {
               { id: 'dashboard', label: 'لوحة القيادة', icon: LayoutDashboard },
               { id: 'orders', label: 'الطلبات والشحن', icon: ShoppingCart, badge: pendingOrdersCount, badgeColor: 'bg-amber-600' },
               { id: 'products', label: 'إدارة المنتجات', icon: Package, badge: products.length },
-              { id: 'marketers', label: 'المسوقون', icon: Users, badge: marketers.length },
+              {
+                id: 'marketers',
+                label: 'المسوقون',
+                icon: Users,
+                badge: pendingMarketersCount > 0 ? pendingMarketersCount : marketers.length,
+                badgeColor: pendingMarketersCount > 0 ? 'bg-amber-600' : undefined,
+              },
               { id: 'withdrawals', label: 'طلبات السحب', icon: Wallet, badge: pendingWithdrawalsCount, badgeColor: 'bg-rose-600' },
               { id: 'shipping', label: 'تعريفات الشحن', icon: Truck },
               { id: 'settings', label: 'إعدادات المنصة', icon: Settings },

@@ -593,6 +593,66 @@ export async function toggleMarketerStatus(id: string): Promise<Marketer> {
   return marketer;
 }
 
+export async function approveMarketer(id: string, customCode?: string): Promise<Marketer> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/marketers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'approve', affiliateCode: customCode }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        broadcastLocalChange('marketer_saved', id);
+        return updated;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  const marketers = await getMarketers();
+  const marketer = marketers.find((m) => m.id === id);
+  if (!marketer) throw new Error('Marketer not found');
+  marketer.status = 'active';
+  if (customCode) marketer.affiliateCode = customCode.trim().toUpperCase();
+  marketer.reviewedAt = new Date().toISOString();
+  marketer.reviewedBy = 'الإدارة العامة';
+  setStorageItem(KEYS.MARKETERS, marketers);
+  broadcastLocalChange('marketer_saved', id);
+  return marketer;
+}
+
+export async function rejectMarketer(id: string, reason?: string): Promise<Marketer> {
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/marketers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'reject', rejectionReason: reason }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        broadcastLocalChange('marketer_saved', id);
+        return updated;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  const marketers = await getMarketers();
+  const marketer = marketers.find((m) => m.id === id);
+  if (!marketer) throw new Error('Marketer not found');
+  marketer.status = 'rejected';
+  marketer.rejectionReason = reason || 'لم يستوفِ الشروط المطلوبة';
+  marketer.reviewedAt = new Date().toISOString();
+  marketer.reviewedBy = 'الإدارة العامة';
+  setStorageItem(KEYS.MARKETERS, marketers);
+  broadcastLocalChange('marketer_saved', id);
+  return marketer;
+}
+
 // ─── Withdrawals API ──────────────────────────────────────────
 
 export async function getWithdrawals(): Promise<WithdrawalRequest[]> {

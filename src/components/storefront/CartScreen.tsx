@@ -50,26 +50,27 @@ export default function CartScreen({ onBack, onNext }: CartScreenProps) {
 
   return (
     <div className="min-h-screen pb-40 bg-canvas">
-      {/* Header */}
-      <div className="px-5 pt-12 pb-2">
-        <button
-          onClick={onBack}
-          className="w-9 h-9 rounded-lg bg-white border border-border flex items-center justify-center hover:bg-neutral-50 transition-colors"
-        >
-          <ArrowLeft size={18} strokeWidth={1.6} className="text-neutral-700" />
-        </button>
-      </div>
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="px-5 pt-8 pb-2">
+          <button
+            onClick={onBack}
+            className="w-9 h-9 rounded-lg bg-white border border-border flex items-center justify-center hover:bg-neutral-50 transition-colors"
+          >
+            <ArrowLeft size={18} strokeWidth={1.6} className="text-neutral-700" />
+          </button>
+        </div>
 
-      {/* Title row */}
-      <div className="px-5 flex items-baseline justify-between mb-5">
-        <h1 className="text-xl font-bold text-ink">{t('navigation.myBag')}</h1>
-        <p className="text-neutral-400 text-xs num-tabular">
-          {t('cart.total')} {cartCount} {t('cart.items')}
-        </p>
-      </div>
+        {/* Title row */}
+        <div className="px-5 flex items-baseline justify-between mb-5">
+          <h1 className="text-xl sm:text-2xl font-bold text-ink">{t('navigation.myBag')}</h1>
+          <p className="text-neutral-400 text-xs num-tabular">
+            {t('cart.total')} {cartCount} {t('cart.items')}
+          </p>
+        </div>
 
-      {/* Cart items */}
-      <div className="px-5 space-y-3">
+        {/* Cart items */}
+        <div className="px-5 space-y-3">
         {cart.map((item: any) => (
           <div
             key={item.cartId || `${item.id}-${item.selectedSize}`}
@@ -132,10 +133,11 @@ export default function CartScreen({ onBack, onNext }: CartScreenProps) {
             </div>
           </div>
         ))}
+        </div>
       </div>
 
       {/* Bottom total + next */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md px-5 pb-6 pt-4 bg-white/95 backdrop-blur-xs border-t border-border z-20">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-4xl px-5 pb-6 pt-4 bg-white/95 backdrop-blur-md border-t border-border z-20">
         <div className="flex items-center justify-between mb-3">
           <span className="text-neutral-500 text-xs font-medium">{t('cart.total')}</span>
           <span className="text-lg font-bold font-mono text-ink num-tabular">
