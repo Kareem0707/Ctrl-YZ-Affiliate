@@ -29,7 +29,7 @@ declare global {
               locale?: string;
             }
           ) => void;
-          prompt: () => void;
+          prompt: (momentListener?: (notification: any) => void) => void;
         };
       };
     };

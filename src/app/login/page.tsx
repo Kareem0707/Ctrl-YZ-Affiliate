@@ -144,6 +144,18 @@ export default function LoginPage() {
     }, 800);
   };
 
+  const handleGoogleButtonClick = () => {
+    if (isGoogleAuthReady && window.google?.accounts?.id) {
+      window.google.accounts.id.prompt((notification: any) => {
+        if (notification?.isNotDisplayed?.() || notification?.isSkippedMoment?.()) {
+          handleTestGoogleLogin();
+        }
+      });
+    } else {
+      handleTestGoogleLogin();
+    }
+  };
+
   const handleOnboardingSuccess = (newMarketer: Marketer) => {
     setOnboardingOpen(false);
     setCurrentMarketerData(newMarketer);
@@ -189,12 +201,20 @@ export default function LoginPage() {
 
         {/* PRIMARY AUTH SECTION: GOOGLE SIGN-IN */}
         <div className="space-y-4 pt-1">
+          {/* Active Google Client ID Status Badge */}
+          {isGoogleAuthReady && (
+            <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 py-1 px-3 rounded-full mx-auto w-fit">
+              <CheckCircle2 size={13} className="text-emerald-600" />
+              <span>معرّف Google Client ID متصل ونشط تلقائياً</span>
+            </div>
+          )}
+
           {/* Real Google GSI Container (if loaded) */}
           <div id="google-btn-container" className="flex justify-center empty:hidden" />
 
           {/* Standard Primary Google Button */}
           <button
-            onClick={isGoogleAuthReady && window.google?.accounts?.id ? undefined : handleTestGoogleLogin}
+            onClick={handleGoogleButtonClick}
             disabled={isProcessingGoogle}
             className="w-full py-3.5 px-4 rounded-xl border border-border bg-white hover:bg-neutral-50 active:scale-99 text-ink font-bold text-xs flex items-center justify-center gap-3 transition-all shadow-subtle group"
           >
