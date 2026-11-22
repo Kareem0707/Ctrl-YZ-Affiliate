@@ -45,9 +45,14 @@ export default function StorefrontApp() {
   const { dir, locale } = useLanguage();
   const { products, loading } = useProducts();
 
-  // Capture Affiliate Referral from URL
+  // Capture Affiliate Referral from URL and listen to cart open event
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const handleOpenCart = () => {
+        handleGoToCart();
+      };
+      window.addEventListener('ctrl_open_cart', handleOpenCart);
+
       const params = new URLSearchParams(window.location.search);
       const ref = params.get('ref');
       if (ref) {
@@ -58,6 +63,10 @@ export default function StorefrontApp() {
           }
         });
       }
+
+      return () => {
+        window.removeEventListener('ctrl_open_cart', handleOpenCart);
+      };
     }
   }, []);
 
@@ -106,7 +115,7 @@ export default function StorefrontApp() {
   };
 
   return (
-    <div dir={dir} className="w-full max-w-7xl mx-auto min-h-screen bg-canvas relative pb-28 px-3 sm:px-6 lg:px-8">
+    <div dir={dir} className="w-full max-w-[1536px] mx-auto min-h-screen bg-canvas relative pb-36 px-4 sm:px-6 lg:px-10 xl:px-12">
       {/* Certified Affiliate Referral Banner (When visiting through a marketer's link) */}
       {referralMarketer && (
         <div className="bg-emerald-950 text-emerald-300 text-xs py-2 px-4 text-center flex items-center justify-center gap-2 border-b border-emerald-900">

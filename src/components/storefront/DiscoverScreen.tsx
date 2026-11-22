@@ -178,7 +178,7 @@ export default function DiscoverScreen({ onProductClick, products, loading }: Di
         </div>
 
         {/* Search Bar */}
-        <div className="mt-5 relative max-w-xl">
+        <div className="mt-5 relative max-w-2xl">
           <Search size={16} strokeWidth={1.6} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-muted" />
           <input
             type="text"
@@ -220,8 +220,8 @@ export default function DiscoverScreen({ onProductClick, products, loading }: Di
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
               <div key={i} className="h-80 rounded-xl bg-zinc-100 animate-pulse border border-border" />
             ))}
           </div>
@@ -236,7 +236,7 @@ export default function DiscoverScreen({ onProductClick, products, loading }: Di
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
             {filteredProducts.map((product) => {
               const hasDiscount = product.salePrice && product.salePrice < product.price;
               const effectivePrice = hasDiscount ? product.salePrice : product.price;

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getProducts } from '@/lib/dataService';
 import type { Product } from '@/lib/types';
+import { useRealtimeSync } from './useRealtimeSync';
 
 interface UseProductsReturn {
   products: Product[];
@@ -28,6 +29,11 @@ export function useProducts(): UseProductsReturn {
       setLoading(false);
     }
   }, []);
+
+  // Real-time synchronization across all devices and tabs
+  useRealtimeSync(() => {
+    fetchProducts();
+  });
 
   useEffect(() => {
     fetchProducts();

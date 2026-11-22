@@ -17,11 +17,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCart } from '@/contexts/CartContext';
 
 export default function TopNavBar() {
   const pathname = usePathname();
   const { user, isAdmin, isMarketer, currentMarketer, loginAsDemoAdmin, loginAsDemoMarketer, logout } = useAuth();
   const { locale, toggleLanguage } = useLanguage();
+  const { cartCount } = useCart();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const navLinks = [
@@ -60,7 +62,7 @@ export default function TopNavBar() {
     <>
       {/* Editorial Announcement Strip */}
       <div className="bg-[#030303] text-white text-[12px] py-1.5 px-4 font-normal tracking-normal border-b border-zinc-800">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-[1536px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-brand shadow-[0_0_8px_#0258ED] animate-pulse" />
             <span className="text-zinc-300">
@@ -81,7 +83,7 @@ export default function TopNavBar() {
 
       {/* Main Global Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border shadow-subtle">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="flex items-center justify-between h-14">
             {/* Brand Logo & Authority Label (Right in RTL) */}
             <div className="flex items-center gap-6">
@@ -130,8 +132,29 @@ export default function TopNavBar() {
               })}
             </nav>
 
-            {/* Controls: Compact Language Switcher + Demo Account Pill (Left in RTL) */}
+            {/* Controls: Compact Language Switcher + Cart + Demo Account Pill */}
             <div className="flex items-center gap-2">
+              {/* Desktop Cart Button */}
+              <Link
+                href="/"
+                onClick={(e) => {
+                  // If on storefront, trigger tab switch or open cart
+                  if (pathname === '/') {
+                    window.dispatchEvent(new CustomEvent('ctrl_open_cart'));
+                  }
+                }}
+                className="relative hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-neutral-700 hover:text-ink hover:bg-neutral-100 border border-border transition-colors"
+                title={locale === 'ar' ? 'سلة التسوق' : 'Shopping Cart'}
+              >
+                <ShoppingBag size={14} strokeWidth={1.6} />
+                <span className="hidden md:inline">{locale === 'ar' ? 'السلة' : 'Cart'}</span>
+                {cartCount > 0 && (
+                  <span className="bg-brand text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center num-tabular">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+
               <button
                 onClick={toggleLanguage}
                 className="px-2 py-1 rounded-md text-[11px] font-medium text-ink-muted hover:text-ink hover:bg-zinc-100 border border-transparent transition-colors flex items-center gap-1"
