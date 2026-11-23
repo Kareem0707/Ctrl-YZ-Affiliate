@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       email: data.email || 'marketer@example.com',
       phone: data.phone || '',
       whatsapp: data.whatsapp || data.phone || '',
+      avatar: data.avatar || '',
       nationalId: data.nationalId || '',
       city: data.city || '',
       marketingChannels: data.marketingChannels || [],

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastModified": 1795384003944,
+  "lastModified": 1795445547514,
   "products": [
     {
       "id": "prod-yz-01",
@@ -40,11 +40,11 @@
           "hex": "#111827"
         }
       ],
-      "stock": 119,
+      "stock": 120,
       "isActive": true,
       "isFeatured": true,
       "createdAt": "2026-11-01T10:00:00.000Z",
-      "updatedAt": "2026-11-22T21:46:43.923Z"
+      "updatedAt": "2026-11-23T14:52:27.514Z"
     },
     {
       "id": "prod-yz-02",
@@ -1471,6 +1471,72 @@
       "type": "product_deleted",
       "timestamp": 1795384003944,
       "entityId": "prod-mwsda3j1"
+    },
+    {
+      "id": "ev-1795445432399-svo3j",
+      "type": "product_saved",
+      "timestamp": 1795445432399,
+      "entityId": "prod-yz-01"
+    },
+    {
+      "id": "ev-1795445432407-tklro",
+      "type": "product_saved",
+      "timestamp": 1795445432407,
+      "entityId": "prod-yz-01"
+    },
+    {
+      "id": "ev-1795445432414-chql1",
+      "type": "product_saved",
+      "timestamp": 1795445432414,
+      "entityId": "prod-yz-01"
+    },
+    {
+      "id": "ev-1795445432421-klmtv",
+      "type": "product_saved",
+      "timestamp": 1795445432421,
+      "entityId": "prod-yz-01"
+    },
+    {
+      "id": "ev-1795445506749-lrshy",
+      "type": "product_saved",
+      "timestamp": 1795445506749,
+      "entityId": "prod-yz-01"
+    },
+    {
+      "id": "ev-1795445506841-npetd",
+      "type": "product_saved",
+      "timestamp": 1795445506841,
+      "entityId": "prod-yz-01"
+    },
+    {
+      "id": "ev-1795445510458-ufmjh",
+      "type": "product_saved",
+      "timestamp": 1795445510458,
+      "entityId": "prod-yz-01"
+    },
+    {
+      "id": "ev-1795445525611-mzlrp",
+      "type": "product_saved",
+      "timestamp": 1795445525611,
+      "entityId": "prod-yz-01"
+    },
+    {
+      "id": "ev-1795445526350-dvyvf",
+      "type": "product_saved",
+      "timestamp": 1795445526350,
+      "entityId": "prod-yz-01"
+    },
+    {
+      "id": "ev-1795445526474-rm18e",
+      "type": "product_saved",
+      "timestamp": 1795445526474,
+      "entityId": "prod-yz-01"
+    },
+    {
+      "id": "ev-1795445547514-bxdg7",
+      "type": "product_saved",
+      "timestamp": 1795445547514,
+      "entityId": "prod-yz-01"
     }
   ]
 }

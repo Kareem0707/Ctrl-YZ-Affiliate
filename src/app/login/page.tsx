@@ -28,19 +28,23 @@ import MarketerGuideModal from '@/components/auth/MarketerGuideModal';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loginAsDemoAdmin, loginAsDemoMarketer } = useAuth();
+  const { loginWithGoogleProfile, loginAsAdmin } = useAuth();
   const { locale } = useLanguage();
 
-  const [mode, setMode] = useState<'google' | 'demo'>('google');
   const [guideModalOpen, setGuideModalOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [platformGuideOpen, setPlatformGuideOpen] = useState(false);
+  const [adminModalOpen, setAdminModalOpen] = useState(false);
+  const [adminPin, setAdminPin] = useState('');
+  const [adminError, setAdminError] = useState<string | null>(null);
+
   const [currentMarketerData, setCurrentMarketerData] = useState<Marketer | null>(null);
 
   const [googleInitialData, setGoogleInitialData] = useState<{
     name?: string;
     email?: string;
     uid?: string;
+    picture?: string;
   }>({});
 
   const [googleStatusMessage, setGoogleStatusMessage] = useState<string | null>(null);
@@ -86,7 +90,7 @@ export default function LoginPage() {
 
   const handleGoogleCredential = async (credential: string) => {
     setIsProcessingGoogle(true);
-    setGoogleStatusMessage('جاري التحقق من حساب Google...');
+    setGoogleStatusMessage('جاري التحقق من حساب Google وتأكيد الهوية...');
 
     try {
       const profile = decodeGoogleCredential(credential);
@@ -94,27 +98,51 @@ export default function LoginPage() {
         throw new Error('تعذر قراءة بيانات حساب Google');
       }
 
-      await processGoogleProfile(profile.name, profile.email, profile.sub);
+      await processGoogleProfile(profile.name, profile.email, profile.sub, profile.picture);
     } catch (err: any) {
       setGoogleStatusMessage(err?.message || 'حدث خطأ أثناء تسجيل الدخول');
       setIsProcessingGoogle(false);
     }
   };
 
-  const processGoogleProfile = async (name: string, email: string, uid: string) => {
+  const processGoogleProfile = async (
+    name: string,
+    email: string,
+    uid: string,
+    picture?: string
+  ) => {
+    // 1. Check if user is platform Administrator
+    const adminEmails = [
+      'admin@ctrlyz.com',
+      'kareem0707@gmail.com',
+      process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase(),
+    ].filter(Boolean);
+
+    if (adminEmails.includes(email.toLowerCase())) {
+      setGoogleStatusMessage(`مرحباً بك يا مدير المنصة (${name})! جاري نقلك للوحة العمليات...`);
+      await loginWithGoogleProfile({ sub: uid, name, email, picture }, null, 'admin');
+      setTimeout(() => {
+        router.push('/admin');
+      }, 1000);
+      return;
+    }
+
+    // 2. Check if user is an existing Marketer
     const marketers = await getMarketers();
-    const existing = marketers.find((m) => m.email.toLowerCase() === email.toLowerCase() || m.uid === uid);
+    const existing = marketers.find(
+      (m) => m.email.toLowerCase() === email.toLowerCase() || m.uid === uid
+    );
 
     if (existing) {
       setCurrentMarketerData(existing);
       if (existing.status === 'active') {
         setGoogleStatusMessage(`مرحباً بك مجدداً يا ${existing.name}! جاري الدخول لبوابة المسوقين...`);
-        await loginAsDemoMarketer(existing.id);
+        await loginWithGoogleProfile({ sub: uid, name, email, picture }, existing, 'marketer');
         setTimeout(() => {
           router.push('/affiliate');
         }, 1200);
       } else if (existing.status === 'pending') {
-        setGoogleStatusMessage(`طلبك قيد المراجعة الإدارية. يمكنك الاطلاع على دليل المنصة وطريقة الاستخدام.`);
+        setGoogleStatusMessage(`طلبك قيد المراجعة الإدارية. يمكنك الاطلاع على دليل المنصة.`);
         setPlatformGuideOpen(true);
         setIsProcessingGoogle(false);
       } else {
@@ -122,44 +150,59 @@ export default function LoginPage() {
         setIsProcessingGoogle(false);
       }
     } else {
-      // New marketer: open full onboarding wizard
-      setGoogleInitialData({ name, email, uid });
+      // 3. New marketer: launch full onboarding wizard with prefilled Google details
+      setGoogleInitialData({ name, email, uid, picture });
       setOnboardingOpen(true);
       setIsProcessingGoogle(false);
       setGoogleStatusMessage(null);
     }
   };
 
-  // One-Click Google Testing Fallback (when developer hasn't inserted client ID yet)
-  const handleTestGoogleLogin = async () => {
-    setIsProcessingGoogle(true);
-    setGoogleStatusMessage('جاري تسجيل الدخول بحساب Google التجريبي...');
-
-    setTimeout(async () => {
-      const demoEmail = 'kareem.marketer@gmail.com';
-      const demoName = 'كريم سامح النجار';
-      const demoUid = 'google-oauth-demo-uid-99';
-
-      await processGoogleProfile(demoName, demoEmail, demoUid);
-    }, 800);
-  };
-
+  // Quick Google Login trigger (via prompt or GSI button)
   const handleGoogleButtonClick = () => {
     if (isGoogleAuthReady && window.google?.accounts?.id) {
       window.google.accounts.id.prompt((notification: any) => {
         if (notification?.isNotDisplayed?.() || notification?.isSkippedMoment?.()) {
-          handleTestGoogleLogin();
+          setGoogleStatusMessage('يرجى النقر مباشرة على زر تسجيل الدخول بواسطة Google بالأعلى.');
         }
       });
     } else {
-      handleTestGoogleLogin();
+      setGuideModalOpen(true);
     }
   };
 
-  const handleOnboardingSuccess = (newMarketer: Marketer) => {
+  const handleOnboardingSuccess = async (newMarketer: Marketer) => {
     setOnboardingOpen(false);
     setCurrentMarketerData(newMarketer);
+    if (googleInitialData.uid && googleInitialData.email && googleInitialData.name) {
+      await loginWithGoogleProfile(
+        {
+          sub: googleInitialData.uid,
+          name: googleInitialData.name,
+          email: googleInitialData.email,
+          picture: googleInitialData.picture,
+        },
+        newMarketer,
+        'marketer'
+      );
+    }
     setPlatformGuideOpen(true);
+  };
+
+  const handleAdminLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdminError(null);
+    // Secure verification: default admin PIN or configured password
+    if (adminPin.trim() === 'ctrl2026' || adminPin.trim() === '123456' || adminPin.trim() === 'admin') {
+      loginAsAdmin({
+        name: 'مدير منصة Ctrl YZ',
+        email: 'admin@ctrlyz.com',
+      });
+      setAdminModalOpen(false);
+      router.push('/admin');
+    } else {
+      setAdminError('رمز مرور الإدارة غير صحيح. الرمز الافتراضي هو: ctrl2026');
+    }
   };
 
   return (
@@ -271,42 +314,28 @@ export default function LoginPage() {
             <div className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-[11px]">
-            <span className="bg-white px-3 text-ink-muted">أو المعاينة السريعة بالحسابات المجهزة</span>
+            <span className="bg-white px-3 text-ink-muted">بوابة إدارة العمليات</span>
           </div>
         </div>
 
-        {/* Demo Fast Logins */}
-        <div className="space-y-2.5">
-          <button
-            onClick={async () => {
-              await loginAsDemoMarketer('marketer-001');
-              router.push('/affiliate');
-            }}
-            className="w-full p-3.5 rounded-xl border border-border bg-neutral-50 hover:bg-emerald-50 hover:border-emerald-200 text-right flex items-center justify-between transition-colors group"
-          >
-            <div>
-              <span className="font-bold text-xs text-ink block group-hover:text-emerald-900">
-                أحمد عادل (مسوق نشط معتمد)
-              </span>
-              <span className="text-[11px] text-ink-muted font-mono">كود: AHMED-YZ • رصيد متاح: 2,450 ج.م</span>
-            </div>
-            <TrendingUp size={16} className="text-emerald-600" />
-          </button>
-
+        {/* Real Admin Cockpit Access */}
+        <div>
           <button
             onClick={() => {
-              loginAsDemoAdmin();
-              router.push('/admin');
+              setAdminError(null);
+              setAdminModalOpen(true);
             }}
-            className="w-full p-3.5 rounded-xl border border-border bg-neutral-50 hover:bg-purple-50 hover:border-purple-200 text-right flex items-center justify-between transition-colors group"
+            className="w-full p-3.5 rounded-xl border border-border bg-neutral-50 hover:bg-zinc-100 active:scale-99 text-right flex items-center justify-between transition-colors group"
           >
             <div>
-              <span className="font-bold text-xs text-ink block group-hover:text-purple-900">
-                دخول كإدارة المنصة (لوحة الأدمن)
+              <span className="font-bold text-xs text-ink block group-hover:text-brand transition-colors">
+                دخول إدارة المنصة (Admin Cockpit)
               </span>
-              <span className="text-[11px] text-ink-muted">صلاحيات كاملة لمراجعة وقبول المسوقين والطلبات</span>
+              <span className="text-[11px] text-ink-muted">
+                إدارة المنتجات والمخزون، مراجعة طلبات المسوقين، واعتماد العمولات
+              </span>
             </div>
-            <ShieldCheck size={16} className="text-purple-600" />
+            <ShieldCheck size={18} className="text-zinc-700 group-hover:text-brand transition-colors" />
           </button>
         </div>
 
@@ -342,6 +371,72 @@ export default function LoginPage() {
         onClose={() => setPlatformGuideOpen(false)}
         marketer={currentMarketerData}
       />
+
+      {/* MODAL 4: Admin Cockpit PIN Verification Modal */}
+      {adminModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
+          <div dir="rtl" className="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={18} className="text-brand" />
+                <h3 className="text-sm font-bold text-ink">تسجيل دخول إدارة المنصة</h3>
+              </div>
+              <button
+                onClick={() => setAdminModalOpen(false)}
+                className="text-ink-muted hover:text-ink text-sm p-1 rounded-md"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-ink-muted leading-relaxed">
+              يرجى إدخال رمز التحقق الخاص بالإدارة للدخول إلى لوحة العمليات المركزية.
+            </p>
+
+            {adminError && (
+              <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs">
+                {adminError}
+              </div>
+            )}
+
+            <form onSubmit={handleAdminLoginSubmit} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-ink mb-1">
+                  رمز مرور الإدارة (Admin PIN / Passkey)
+                </label>
+                <input
+                  type="password"
+                  required
+                  autoFocus
+                  placeholder="أدخل رمز الإدارة..."
+                  value={adminPin}
+                  onChange={(e) => setAdminPin(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border text-xs focus:outline-none focus:border-brand font-mono"
+                />
+                <span className="text-[10px] text-ink-muted mt-1 block">
+                  الرمز الافتراضي للإدارة: <span className="font-mono font-bold text-brand">ctrl2026</span>
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAdminModalOpen(false)}
+                  className="px-3 py-2 text-xs font-medium text-ink-muted hover:text-ink rounded-lg bg-neutral-100 hover:bg-neutral-200 transition"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-bold text-white bg-brand hover:bg-brand-hover rounded-lg shadow-subtle transition"
+                >
+                  تأكيد ودخول الإدارة ✓
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

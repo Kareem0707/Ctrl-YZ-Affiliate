@@ -31,12 +31,12 @@ export default function ProductFormModal({
   const [brand, setBrand] = useState(product?.brand || 'Ctrl YZ');
   const [category, setCategory] = useState(product?.category || 'Hoodies');
 
-  const [costPrice, setCostPrice] = useState<number>(product?.costPrice || 260);
-  const [wholesalePrice, setWholesalePrice] = useState<number>(product?.wholesalePrice || 370);
-  const [suggestedPrice, setSuggestedPrice] = useState<number>(product?.suggestedPrice || 590);
-  const [minPrice, setMinPrice] = useState<number>(product?.minPrice || 510);
+  const [costPrice, setCostPrice] = useState<number>(product?.costPrice ?? 260);
+  const [wholesalePrice, setWholesalePrice] = useState<number>(product?.wholesalePrice ?? 370);
+  const [suggestedPrice, setSuggestedPrice] = useState<number>(product?.suggestedPrice ?? 590);
+  const [minPrice, setMinPrice] = useState<number>(product?.minPrice ?? 510);
   const [salePrice, setSalePrice] = useState<number | undefined>(product?.salePrice);
-  const [stock, setStock] = useState<number>(product?.stock || 80);
+  const [stock, setStock] = useState<number>(product?.stock ?? 80);
 
   const [descriptionAr, setDescriptionAr] = useState(
     product?.description_ar ||

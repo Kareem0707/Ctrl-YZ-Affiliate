@@ -166,92 +166,124 @@ export default function TopNavBar() {
 
               <div className="h-4 w-px bg-border" />
 
-              {/* Demo Account Switcher Pill */}
-              <div className="relative">
-                <button
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-border text-ink text-xs font-medium transition-all"
-                >
-                  <div className="w-5 h-5 rounded-full bg-ink text-white flex items-center justify-center text-[10px] font-bold">
-                    {isAdmin ? 'A' : isMarketer ? 'M' : 'U'}
-                  </div>
-                  <div className="hidden sm:flex flex-col text-right">
-                    <span className="text-xs font-semibold leading-tight text-ink">
-                      {user?.displayName?.split(' ')[0] || (isAdmin ? 'الإدارة' : 'المسوق')}
-                    </span>
-                    <span className="text-[10px] text-ink-muted leading-tight">
-                      {isAdmin ? 'مدير المنصة' : isMarketer ? `كود: ${currentMarketer?.affiliateCode || 'AFF'}` : 'زائر'}
-                    </span>
-                  </div>
-                  <ChevronDown size={12} strokeWidth={1.6} className="text-ink-muted" />
-                </button>
-
-                {userDropdownOpen && (
-                  <div
-                    className="absolute left-0 sm:left-auto right-0 mt-2 w-64 bg-white rounded-xl shadow-elevated border border-border py-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
-                    onClick={() => setUserDropdownOpen(false)}
+              {/* User Profile / Login Button */}
+              {user ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 border border-border text-ink text-xs font-medium transition-all group"
                   >
-                    <div className="px-3 py-2 border-b border-border">
-                      <p className="text-[10px] text-ink-muted font-medium uppercase tracking-wider">
-                        {locale === 'ar' ? 'الحساب النشط حالياً' : 'Active Account'}
-                      </p>
-                      <p className="text-xs font-bold text-ink mt-0.5">
-                        {user?.displayName || 'حساب تجريبي'}
-                      </p>
-                      {isMarketer && currentMarketer && (
-                        <div className="mt-2 bg-financial-subtle border border-financial-border px-2 py-1 rounded-md text-[11px] font-medium text-financial flex items-center justify-between">
-                          <span className="flex items-center gap-1">
-                            <Wallet size={11} strokeWidth={1.6} /> {locale === 'ar' ? 'المتاح للسحب:' : 'Available:'}
+                    {user.photoURL || currentMarketer?.avatar ? (
+                      <img
+                        src={user.photoURL || currentMarketer?.avatar || ''}
+                        alt={user.displayName || 'User'}
+                        className="w-7 h-7 rounded-full object-cover ring-2 ring-brand/40 shadow-xs"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center text-[11px] font-bold shadow-xs">
+                        {user.displayName ? user.displayName.charAt(0).toUpperCase() : (isAdmin ? 'A' : 'M')}
+                      </div>
+                    )}
+                    <div className="hidden sm:flex flex-col text-right">
+                      <span className="text-xs font-bold leading-tight text-ink group-hover:text-brand transition-colors">
+                        {user.displayName?.split(' ')[0] || (isAdmin ? 'الإدارة' : 'المسوق')}
+                      </span>
+                      <span className="text-[10px] text-ink-muted leading-tight font-mono">
+                        {isAdmin ? 'مدير المنصة' : currentMarketer?.affiliateCode || 'مسوق معتمد'}
+                      </span>
+                    </div>
+                    <ChevronDown size={12} strokeWidth={1.6} className="text-ink-muted" />
+                  </button>
+
+                  {userDropdownOpen && (
+                    <div
+                      className="absolute left-0 sm:left-auto right-0 mt-2 w-64 bg-white rounded-2xl shadow-elevated border border-border py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+                      onClick={() => setUserDropdownOpen(false)}
+                    >
+                      {/* User Header */}
+                      <div className="px-3.5 py-2.5 border-b border-border flex items-center gap-3">
+                        {user.photoURL || currentMarketer?.avatar ? (
+                          <img
+                            src={user.photoURL || currentMarketer?.avatar || ''}
+                            alt={user.displayName || 'User'}
+                            className="w-10 h-10 rounded-full object-cover ring-2 ring-brand/40 flex-shrink-0"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+                            {user.displayName ? user.displayName.charAt(0).toUpperCase() : (isAdmin ? 'A' : 'M')}
+                          </div>
+                        )}
+                        <div className="overflow-hidden">
+                          <p className="text-xs font-bold text-ink truncate">
+                            {user.displayName || 'مستخدم مسجل'}
+                          </p>
+                          <p className="text-[10px] text-ink-muted truncate font-mono">
+                            {user.email || 'حساب مفعل'}
+                          </p>
+                          <span className="inline-block mt-0.5 text-[9px] font-semibold px-1.5 py-0.2 rounded bg-brand/10 text-brand">
+                            {isAdmin ? 'مدير المنصة' : 'مسوق معتمد'}
                           </span>
-                          <span className="font-bold num-tabular">{currentMarketer.walletBalance} ج.م</span>
+                        </div>
+                      </div>
+
+                      {/* Wallet Balance for Marketers */}
+                      {isMarketer && currentMarketer && (
+                        <div className="mx-3 my-2 p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-900 flex items-center justify-between">
+                          <span className="flex items-center gap-1 font-medium text-[11px]">
+                            <Wallet size={12} strokeWidth={1.6} className="text-emerald-700" />
+                            {locale === 'ar' ? 'المتاح للسحب:' : 'Available:'}
+                          </span>
+                          <span className="font-bold font-mono text-emerald-800 num-tabular">
+                            {currentMarketer.walletBalance} ج.م
+                          </span>
                         </div>
                       )}
+
+                      {/* Quick Navigation Links */}
+                      <div className="px-1.5 py-1 space-y-0.5">
+                        {isAdmin ? (
+                          <Link
+                            href="/admin"
+                            className="w-full text-right px-3 py-2 rounded-lg text-xs hover:bg-neutral-50 flex items-center gap-2 text-ink font-medium transition-colors"
+                          >
+                            <ShieldCheck size={14} className="text-brand" />
+                            <span>لوحة إدارة العمليات المركزية</span>
+                          </Link>
+                        ) : (
+                          <Link
+                            href="/affiliate"
+                            className="w-full text-right px-3 py-2 rounded-lg text-xs hover:bg-neutral-50 flex items-center gap-2 text-ink font-medium transition-colors"
+                          >
+                            <TrendingUp size={14} className="text-emerald-600" />
+                            <span>بوابة المسوقين والأرباح</span>
+                          </Link>
+                        )}
+                      </div>
+
+                      {/* Logout Action */}
+                      <div className="border-t border-border mt-1 pt-1 px-1.5">
+                        <button
+                          onClick={logout}
+                          className="w-full text-right px-3 py-2 rounded-lg text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors font-semibold"
+                        >
+                          <LogOut size={13} strokeWidth={1.8} />
+                          <span>{locale === 'ar' ? 'تسجيل الخروج' : 'Sign out'}</span>
+                        </button>
+                      </div>
                     </div>
-
-                    <div className="px-1.5 py-1">
-                      <p className="px-2 py-1 text-[10px] font-semibold text-ink-muted uppercase tracking-wider">
-                        {locale === 'ar' ? 'تبديل الحساب السريع للتجربة' : 'Switch Persona'}
-                      </p>
-                      <button
-                        onClick={() => loginAsDemoMarketer('marketer-001')}
-                        className="w-full text-right px-2.5 py-1.5 rounded-lg text-xs hover:bg-zinc-50 flex items-center justify-between transition-colors"
-                      >
-                        <span className="font-medium text-ink">أحمد عادل (مسوق رئيسي)</span>
-                        <span className="text-[10px] text-ink-muted num-tabular">2,450 ج.م</span>
-                      </button>
-
-                      <button
-                        onClick={() => loginAsDemoMarketer('marketer-002')}
-                        className="w-full text-right px-2.5 py-1.5 rounded-lg text-xs hover:bg-zinc-50 flex items-center justify-between transition-colors"
-                      >
-                        <span className="font-medium text-ink">سارة محمود (مسوقة محتوى)</span>
-                        <span className="text-[10px] text-ink-muted num-tabular">1,680 ج.م</span>
-                      </button>
-
-                      <button
-                        onClick={loginAsDemoAdmin}
-                        className="w-full text-right px-2.5 py-1.5 rounded-lg text-xs hover:bg-zinc-50 flex items-center justify-between transition-colors text-ink font-semibold"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <ShieldCheck size={13} strokeWidth={1.6} className="text-zinc-700" />
-                          <span>المدير العام (Master Admin)</span>
-                        </span>
-                        <span className="text-[10px] bg-zinc-100 text-zinc-700 px-1.5 py-0.5 rounded font-mono">لوحة الإدارة</span>
-                      </button>
-                    </div>
-
-                    <div className="border-t border-border mt-1 pt-1 px-1.5">
-                      <button
-                        onClick={logout}
-                        className="w-full text-right px-2.5 py-1.5 rounded-lg text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors font-medium"
-                      >
-                        <LogOut size={13} strokeWidth={1.6} />
-                        <span>{locale === 'ar' ? 'تسجيل الخروج' : 'Sign out'}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold shadow-subtle transition-all active:scale-95"
+                >
+                  <User size={13} strokeWidth={2} />
+                  <span>{locale === 'ar' ? 'تسجيل الدخول' : 'Sign In'}</span>
+                </Link>
+              )}
             </div>
           </div>
         </div>

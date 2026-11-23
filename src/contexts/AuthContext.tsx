@@ -8,7 +8,7 @@ import type { Marketer } from '@/lib/types';
 
 export type UserRole = 'admin' | 'marketer' | 'customer' | 'guest';
 
-interface AuthUser {
+export interface AuthUser {
   uid: string;
   email: string | null;
   displayName: string | null;
@@ -23,9 +23,15 @@ interface AuthContextType {
   isMarketer: boolean;
   currentMarketer: Marketer | null;
   signInWithGoogle: () => Promise<void>;
+  loginWithGoogleProfile: (
+    profile: { sub: string; name: string; email: string; picture?: string },
+    marketer?: Marketer | null,
+    forcedRole?: UserRole
+  ) => Promise<void>;
+  loginAsAdmin: (adminInfo?: { name?: string; email?: string; photoURL?: string }) => void;
   loginAsDemoAdmin: () => void;
   loginAsDemoMarketer: (marketerId?: string) => Promise<void>;
-  registerMarketer: (data: { name: string; email: string; phone: string; whatsapp?: string; payoutMethod?: string; payoutAccount?: string }) => Promise<Marketer>;
+  registerMarketer: (data: { name: string; email: string; phone: string; whatsapp?: string; payoutMethod?: string; payoutAccount?: string; avatar?: string }) => Promise<Marketer>;
   logout: () => Promise<void>;
   refreshMarketer: () => Promise<void>;
 }
@@ -36,7 +42,7 @@ const AUTH_STORAGE_KEY = 'ctrl_yz_auth_session';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [role, setRole] = useState<UserRole>('marketer'); // Default demo role to marketer
+  const [role, setRole] = useState<UserRole>('guest');
   const [currentMarketer, setCurrentMarketer] = useState<Marketer | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -45,41 +51,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(AUTH_STORAGE_KEY);
       if (saved) {
         const session = JSON.parse(saved);
-        setUser(session.user);
-        setRole(session.role);
-        if (session.marketerId) {
-          const marketers = await getMarketers();
-          const found = marketers.find((m) => m.id === session.marketerId || m.uid === session.user?.uid);
-          if (found) setCurrentMarketer(found);
+        if (session.user) {
+          setUser(session.user);
+          setRole(session.role || 'guest');
+          if (session.marketerId) {
+            const marketers = await getMarketers();
+            const found = marketers.find((m) => m.id === session.marketerId || m.uid === session.user?.uid);
+            if (found) setCurrentMarketer(found);
+          }
         }
       } else {
-        // Default initialization: sign in as Demo Marketer Ahmed so the user immediately sees the real affiliate experience
-        const marketers = await getMarketers();
-        const defaultMarketer = marketers[0] || null;
-        if (defaultMarketer) {
-          setUser({
-            uid: defaultMarketer.uid,
-            email: defaultMarketer.email,
-            displayName: defaultMarketer.name,
-          });
-          setRole('marketer');
-          setCurrentMarketer(defaultMarketer);
-          localStorage.setItem(
-            AUTH_STORAGE_KEY,
-            JSON.stringify({
-              user: {
-                uid: defaultMarketer.uid,
-                email: defaultMarketer.email,
-                displayName: defaultMarketer.name,
-              },
-              role: 'marketer',
-              marketerId: defaultMarketer.id,
-            })
-          );
-        }
+        // Real Guest state: do not automatically login as dummy user
+        setUser(null);
+        setRole('guest');
+        setCurrentMarketer(null);
       }
     } catch (e) {
       console.error('Error loading auth session:', e);
+      setUser(null);
+      setRole('guest');
+      setCurrentMarketer(null);
     } finally {
       setLoading(false);
     }
@@ -137,11 +128,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [currentMarketer]);
 
-  const loginAsDemoAdmin = () => {
+  const loginWithGoogleProfile = async (
+    profile: { sub: string; name: string; email: string; picture?: string },
+    marketer?: Marketer | null,
+    forcedRole?: UserRole
+  ) => {
+    const adminEmails = [
+      'admin@ctrlyz.com',
+      'kareem0707@gmail.com',
+      process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase(),
+    ].filter(Boolean);
+
+    const isUserAdmin = forcedRole === 'admin' || (profile.email && adminEmails.includes(profile.email.toLowerCase()));
+    const assignedRole: UserRole = isUserAdmin ? 'admin' : forcedRole || (marketer ? 'marketer' : 'marketer');
+
+    const authUser: AuthUser = {
+      uid: profile.sub,
+      email: profile.email,
+      displayName: profile.name,
+      photoURL: profile.picture || null,
+    };
+
+    setUser(authUser);
+    setRole(assignedRole);
+    setCurrentMarketer(marketer || null);
+
+    localStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({
+        user: authUser,
+        role: assignedRole,
+        marketerId: marketer?.id || null,
+      })
+    );
+  };
+
+  const loginAsAdmin = (adminInfo?: { name?: string; email?: string; photoURL?: string }) => {
     const adminUser: AuthUser = {
-      uid: 'admin-super-id',
-      email: 'admin@ctrlyz.com',
-      displayName: 'المدير العام (Admin)',
+      uid: 'admin-super-root',
+      email: adminInfo?.email || 'admin@ctrlyz.com',
+      displayName: adminInfo?.name || 'إدارة Ctrl YZ الرسمية',
+      photoURL: adminInfo?.photoURL || null,
     };
     setUser(adminUser);
     setRole('admin');
@@ -150,6 +177,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       AUTH_STORAGE_KEY,
       JSON.stringify({ user: adminUser, role: 'admin' })
     );
+  };
+
+  const loginAsDemoAdmin = () => {
+    loginAsAdmin({ name: 'المدير العام (Admin)', email: 'admin@ctrlyz.com' });
   };
 
   const loginAsDemoMarketer = async (marketerId?: string) => {
@@ -181,12 +212,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     whatsapp?: string;
     payoutMethod?: string;
     payoutAccount?: string;
+    avatar?: string;
   }): Promise<Marketer> => {
     const newMarketer = await saveMarketer({
       name: data.name,
       email: data.email,
       phone: data.phone,
       whatsapp: data.whatsapp || data.phone,
+      avatar: data.avatar,
       payoutInfo: {
         method: (data.payoutMethod as any) || 'vodafone_cash',
         accountNumber: data.payoutAccount || data.phone,
@@ -198,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       uid: newMarketer.uid,
       email: newMarketer.email,
       displayName: newMarketer.name,
+      photoURL: data.avatar || null,
     };
     setUser(mUser);
     setRole('marketer');
@@ -217,9 +251,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Google Sign In error:', err);
         throw err;
       }
-    } else {
-      // Offline fallback: prompt demo login
-      await loginAsDemoMarketer();
     }
   };
 
@@ -247,6 +278,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isMarketer: role === 'marketer',
         currentMarketer,
         signInWithGoogle,
+        loginWithGoogleProfile,
+        loginAsAdmin,
         loginAsDemoAdmin,
         loginAsDemoMarketer,
         registerMarketer,

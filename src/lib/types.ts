@@ -110,6 +110,7 @@ export interface Marketer {
   email: string;
   phone: string;
   whatsapp: string;
+  avatar?: string;
   nationalId?: string; // الرقم القومي (14 رقم للتحقق المالي)
   city?: string; // المحافظة / المدينة
   marketingChannels?: string[]; // Facebook, TikTok, Instagram, Telegram, Website, WhatsApp, Other

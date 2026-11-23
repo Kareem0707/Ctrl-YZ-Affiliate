@@ -28,6 +28,7 @@ interface MarketerOnboardingModalProps {
     name?: string;
     email?: string;
     uid?: string;
+    picture?: string;
   };
   onSuccess: (marketer: Marketer) => void;
 }
@@ -152,6 +153,7 @@ export default function MarketerOnboardingModal({
         email: email.trim() || `${phone.trim()}@affiliate.com`,
         phone: phone.trim(),
         whatsapp: whatsapp.trim() || phone.trim(),
+        avatar: initialData?.picture,
         nationalId: nationalId.trim(),
         city,
         marketingChannels: selectedChannels,

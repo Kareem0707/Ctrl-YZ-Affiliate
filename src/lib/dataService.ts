@@ -122,6 +122,14 @@ export async function saveProduct(productData: Partial<Product>): Promise<Produc
       });
       if (res.ok) {
         const saved = await res.json();
+        const local = getStorageItem<Product[]>(KEYS.PRODUCTS, []);
+        const idx = local.findIndex((p) => p.id === saved.id);
+        if (idx > -1) {
+          local[idx] = saved;
+        } else {
+          local.unshift(saved);
+        }
+        setStorageItem(KEYS.PRODUCTS, local);
         broadcastLocalChange('product_saved', saved.id);
         return saved;
       }

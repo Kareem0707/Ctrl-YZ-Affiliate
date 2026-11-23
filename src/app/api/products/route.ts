@@ -23,6 +23,10 @@ export async function POST(request: NextRequest) {
         const updated: Product = {
           ...db.products[idx],
           ...data,
+          stock: data.stock !== undefined ? Math.max(0, parseInt(String(data.stock), 10) || 0) : db.products[idx].stock,
+          costPrice: data.costPrice !== undefined ? Number(data.costPrice) : db.products[idx].costPrice,
+          wholesalePrice: data.wholesalePrice !== undefined ? Number(data.wholesalePrice) : db.products[idx].wholesalePrice,
+          suggestedPrice: data.suggestedPrice !== undefined ? Number(data.suggestedPrice) : db.products[idx].suggestedPrice,
           updatedAt: now,
         };
         db.products[idx] = updated;
