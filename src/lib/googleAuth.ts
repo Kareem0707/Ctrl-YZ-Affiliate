@@ -58,7 +58,9 @@ export function decodeGoogleCredential(credential: string): GoogleUserProfile | 
   }
 }
 
-export const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+export const GOOGLE_CLIENT_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+  '227718318345-o604ah4j53deajnthpktj4gqc789d5b2.apps.googleusercontent.com';
 
 export const isGoogleAuthReady = Boolean(
   GOOGLE_CLIENT_ID &&
