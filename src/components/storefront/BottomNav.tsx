@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useId, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useId, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -244,13 +244,14 @@ export default function BottomNav({
     return idx >= 0 ? idx : 0;
   }, [tabs, activeTab]);
 
-  // Initial estimate before measurement
+  // RTL-aware initial estimate before DOM measurement (prevents left->right jump on first paint)
   const [activeCenterX, setActiveCenterX] = useState<number>(() => {
-    return ((activeIndex + 0.5) / 5) * 380;
+    const visualIndex = isRTL ? tabs.length - 1 - activeIndex : activeIndex;
+    return ((visualIndex + 0.5) / tabs.length) * 380;
   });
 
   // Measure tab centers dynamically with ResizeObserver
-  const measureTabCenter = () => {
+  const measureTabCenter = useCallback(() => {
     const container = containerRef.current;
     const tabEl = tabRefs.current[activeIndex];
     if (container && tabEl) {
@@ -260,7 +261,7 @@ export default function BottomNav({
       const center = tRect.left - cRect.left + tRect.width / 2;
       setActiveCenterX(center);
     }
-  };
+  }, [activeIndex]);
 
   useEffect(() => {
     measureTabCenter();
@@ -278,7 +279,7 @@ export default function BottomNav({
       ro.disconnect();
       window.removeEventListener('resize', measureTabCenter);
     };
-  }, [activeIndex, tabs.length]);
+  }, [measureTabCenter, tabs.length]);
 
   const handleTabClick = (tabId: NavTabId) => {
     if (tabId === 'cart') {
@@ -294,7 +295,7 @@ export default function BottomNav({
     <nav
       dir={isRTL ? 'rtl' : 'ltr'}
       aria-label="Mobile Navigation"
-      className="fixed bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-24px)] max-w-[430px] select-none"
+      className="md:hidden fixed bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-24px)] max-w-[430px] select-none"
       style={{ touchAction: 'manipulation' }}
     >
       <div

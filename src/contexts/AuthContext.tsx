@@ -1,272 +1,173 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { User, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { auth, googleProvider, isFirebaseConfigured } from '@/lib/firebase';
-import { getMarketers, saveMarketer } from '@/lib/dataService';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  type ReactNode,
+} from 'react';
 import type { Marketer } from '@/lib/types';
+import type { AuthNextStep, SessionAffiliateStatus, SessionRole } from '@/lib/auth/session';
 
 export type UserRole = 'admin' | 'marketer' | 'customer' | 'guest';
 
 export interface AuthUser {
+  id: string;
   uid: string;
-  email: string | null;
-  displayName: string | null;
+  email: string;
+  name: string;
+  displayName: string;
+  avatarUrl?: string | null;
   photoURL?: string | null;
+  role: SessionRole;
+  emailVerifiedAt?: string | null;
+  phoneVerifiedAt?: string | null;
+}
+
+export type AuthenticatedMarketer = Marketer & {
+  dbStatus?: SessionAffiliateStatus;
+  lockedBalance?: number;
+};
+
+export interface GoogleAuthResult {
+  authenticated: boolean;
+  user: AuthUser;
+  affiliate: AuthenticatedMarketer | null;
+  nextStep: AuthNextStep;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   role: UserRole;
+  dbRole: SessionRole | null;
   isAdmin: boolean;
   isMarketer: boolean;
-  currentMarketer: Marketer | null;
-  signInWithGoogle: () => Promise<void>;
-  loginWithGoogleProfile: (
-    profile: { sub: string; name: string; email: string; picture?: string },
-    marketer?: Marketer | null,
-    forcedRole?: UserRole
-  ) => Promise<void>;
-  loginAsAdmin: (adminInfo?: { name?: string; email?: string; photoURL?: string }) => void;
-  loginAsDemoAdmin: () => void;
-  loginAsDemoMarketer: (marketerId?: string) => Promise<void>;
-  registerMarketer: (data: { name: string; email: string; phone: string; whatsapp?: string; payoutMethod?: string; payoutAccount?: string; avatar?: string }) => Promise<Marketer>;
+  isActiveMarketer: boolean;
+  currentMarketer: AuthenticatedMarketer | null;
+  nextStep: AuthNextStep | null;
+  authenticateWithGoogle: (credential: string) => Promise<GoogleAuthResult>;
   logout: () => Promise<void>;
+  refreshSession: () => Promise<void>;
   refreshMarketer: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_STORAGE_KEY = 'ctrl_yz_auth_session';
+function mapDbRoleToUiRole(dbRole?: SessionRole | null): UserRole {
+  switch (dbRole) {
+    case 'ADMIN':
+      return 'admin';
+    case 'MARKETER':
+      return 'marketer';
+    case 'CUSTOMER':
+      return 'customer';
+    default:
+      return 'guest';
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [role, setRole] = useState<UserRole>('guest');
-  const [currentMarketer, setCurrentMarketer] = useState<Marketer | null>(null);
+  const [dbRole, setDbRole] = useState<SessionRole | null>(null);
+  const [currentMarketer, setCurrentMarketer] = useState<AuthenticatedMarketer | null>(null);
+  const [nextStep, setNextStep] = useState<AuthNextStep | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadSavedSession = useCallback(async () => {
+  const refreshSession = useCallback(async () => {
     try {
-      const saved = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (saved) {
-        const session = JSON.parse(saved);
-        if (session.user) {
-          setUser(session.user);
-          setRole(session.role || 'guest');
-          if (session.marketerId) {
-            const marketers = await getMarketers();
-            const found = marketers.find((m) => m.id === session.marketerId || m.uid === session.user?.uid);
-            if (found) setCurrentMarketer(found);
-          }
-        }
-      } else {
-        // Real Guest state: do not automatically login as dummy user
+      const res = await fetch('/api/auth/me', {
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-store',
+      });
+
+      if (!res.ok) {
         setUser(null);
-        setRole('guest');
+        setDbRole(null);
         setCurrentMarketer(null);
+        setNextStep(null);
+        return;
       }
-    } catch (e) {
-      console.error('Error loading auth session:', e);
+
+      const data = await res.json();
+      if (data.authenticated && data.user) {
+        setUser(data.user);
+        setDbRole(data.user.role);
+        setCurrentMarketer(data.affiliate ?? null);
+        setNextStep(data.nextStep ?? null);
+      } else {
+        setUser(null);
+        setDbRole(null);
+        setCurrentMarketer(null);
+        setNextStep(null);
+      }
+    } catch (err) {
+      console.error('[AuthContext] Failed to verify server session:', err);
       setUser(null);
-      setRole('guest');
+      setDbRole(null);
       setCurrentMarketer(null);
+      setNextStep(null);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (isFirebaseConfigured && auth) {
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
-        if (firebaseUser) {
-          const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@example.com';
-          const isUserAdmin = firebaseUser.email === adminEmail;
+    refreshSession();
+  }, [refreshSession]);
 
-          const marketers = await getMarketers();
-          let marketer = marketers.find((m) => m.email === firebaseUser.email || m.uid === firebaseUser.uid);
-
-          if (!marketer && !isUserAdmin) {
-            marketer = await saveMarketer({
-              uid: firebaseUser.uid,
-              name: firebaseUser.displayName || 'مسوق جديد',
-              email: firebaseUser.email || '',
-              phone: firebaseUser.phoneNumber || '',
-            });
-          }
-
-          const u: AuthUser = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-          };
-          setUser(u);
-          const assignedRole = isUserAdmin ? 'admin' : 'marketer';
-          setRole(assignedRole);
-          setCurrentMarketer(marketer || null);
-          localStorage.setItem(
-            AUTH_STORAGE_KEY,
-            JSON.stringify({ user: u, role: assignedRole, marketerId: marketer?.id })
-          );
-        } else {
-          loadSavedSession();
-        }
-        setLoading(false);
+  const authenticateWithGoogle = useCallback(
+    async (credential: string): Promise<GoogleAuthResult> => {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ credential }),
       });
-      return () => unsubscribe();
-    } else {
-      loadSavedSession();
-    }
-  }, [loadSavedSession]);
 
-  const refreshMarketer = useCallback(async () => {
-    if (currentMarketer) {
-      const marketers = await getMarketers();
-      const updated = marketers.find((m) => m.id === currentMarketer.id);
-      if (updated) setCurrentMarketer(updated);
-    }
-  }, [currentMarketer]);
-
-  const loginWithGoogleProfile = async (
-    profile: { sub: string; name: string; email: string; picture?: string },
-    marketer?: Marketer | null,
-    forcedRole?: UserRole
-  ) => {
-    const adminEmails = [
-      'admin@ctrlyz.com',
-      'kareem0707@gmail.com',
-      process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase(),
-    ].filter(Boolean);
-
-    const isUserAdmin = forcedRole === 'admin' || (profile.email && adminEmails.includes(profile.email.toLowerCase()));
-    const assignedRole: UserRole = isUserAdmin ? 'admin' : forcedRole || (marketer ? 'marketer' : 'marketer');
-
-    const authUser: AuthUser = {
-      uid: profile.sub,
-      email: profile.email,
-      displayName: profile.name,
-      photoURL: profile.picture || null,
-    };
-
-    setUser(authUser);
-    setRole(assignedRole);
-    setCurrentMarketer(marketer || null);
-
-    localStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify({
-        user: authUser,
-        role: assignedRole,
-        marketerId: marketer?.id || null,
-      })
-    );
-  };
-
-  const loginAsAdmin = (adminInfo?: { name?: string; email?: string; photoURL?: string }) => {
-    const adminUser: AuthUser = {
-      uid: 'admin-super-root',
-      email: adminInfo?.email || 'admin@ctrlyz.com',
-      displayName: adminInfo?.name || 'إدارة Ctrl YZ الرسمية',
-      photoURL: adminInfo?.photoURL || null,
-    };
-    setUser(adminUser);
-    setRole('admin');
-    setCurrentMarketer(null);
-    localStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify({ user: adminUser, role: 'admin' })
-    );
-  };
-
-  const loginAsDemoAdmin = () => {
-    loginAsAdmin({ name: 'المدير العام (Admin)', email: 'admin@ctrlyz.com' });
-  };
-
-  const loginAsDemoMarketer = async (marketerId?: string) => {
-    const marketers = await getMarketers();
-    const target = marketerId
-      ? marketers.find((m) => m.id === marketerId) || marketers[0]
-      : marketers[0];
-
-    if (target) {
-      const mUser: AuthUser = {
-        uid: target.uid,
-        email: target.email,
-        displayName: target.name,
-      };
-      setUser(mUser);
-      setRole('marketer');
-      setCurrentMarketer(target);
-      localStorage.setItem(
-        AUTH_STORAGE_KEY,
-        JSON.stringify({ user: mUser, role: 'marketer', marketerId: target.id })
-      );
-    }
-  };
-
-  const registerMarketer = async (data: {
-    name: string;
-    email: string;
-    phone: string;
-    whatsapp?: string;
-    payoutMethod?: string;
-    payoutAccount?: string;
-    avatar?: string;
-  }): Promise<Marketer> => {
-    const newMarketer = await saveMarketer({
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      whatsapp: data.whatsapp || data.phone,
-      avatar: data.avatar,
-      payoutInfo: {
-        method: (data.payoutMethod as any) || 'vodafone_cash',
-        accountNumber: data.payoutAccount || data.phone,
-        accountHolderName: data.name,
-      },
-    });
-
-    const mUser: AuthUser = {
-      uid: newMarketer.uid,
-      email: newMarketer.email,
-      displayName: newMarketer.name,
-      photoURL: data.avatar || null,
-    };
-    setUser(mUser);
-    setRole('marketer');
-    setCurrentMarketer(newMarketer);
-    localStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify({ user: mUser, role: 'marketer', marketerId: newMarketer.id })
-    );
-    return newMarketer;
-  };
-
-  const signInWithGoogle = async () => {
-    if (isFirebaseConfigured && auth) {
-      try {
-        await signInWithPopup(auth, googleProvider);
-      } catch (err) {
-        console.error('Google Sign In error:', err);
-        throw err;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'فشل التحقق من حساب Google على الخادم');
       }
-    }
-  };
 
-  const logout = async () => {
-    if (isFirebaseConfigured && auth) {
-      try {
-        await signOut(auth);
-      } catch (err) {
-        console.error('Logout error:', err);
+      setUser(data.user);
+      setDbRole(data.user.role);
+      setCurrentMarketer(data.affiliate ?? null);
+      setNextStep(data.nextStep ?? null);
+
+      return data as GoogleAuthResult;
+    },
+    []
+  );
+
+  const logout = useCallback(async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (typeof window !== 'undefined' && window.google?.accounts?.id?.disableAutoSelect) {
+        window.google.accounts.id.disableAutoSelect();
       }
+    } catch (err) {
+      console.error('[AuthContext] Logout error:', err);
+    } finally {
+      setUser(null);
+      setDbRole(null);
+      setCurrentMarketer(null);
+      setNextStep(null);
     }
-    setUser(null);
-    setRole('guest');
-    setCurrentMarketer(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-  };
+  }, []);
+
+  const role = mapDbRoleToUiRole(dbRole);
+  const isAdmin = dbRole === 'ADMIN';
+  const isMarketer = dbRole === 'MARKETER';
+  const isActiveMarketer = Boolean(
+    currentMarketer && (currentMarketer.dbStatus === 'ACTIVE' || currentMarketer.status === 'active')
+  );
 
   return (
     <AuthContext.Provider
@@ -274,17 +175,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         loading,
         role,
-        isAdmin: role === 'admin',
-        isMarketer: role === 'marketer',
+        dbRole,
+        isAdmin,
+        isMarketer,
+        isActiveMarketer,
         currentMarketer,
-        signInWithGoogle,
-        loginWithGoogleProfile,
-        loginAsAdmin,
-        loginAsDemoAdmin,
-        loginAsDemoMarketer,
-        registerMarketer,
+        nextStep,
+        authenticateWithGoogle,
         logout,
-        refreshMarketer,
+        refreshSession,
+        refreshMarketer: refreshSession,
       }}
     >
       {children}

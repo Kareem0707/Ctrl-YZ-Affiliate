@@ -21,6 +21,7 @@ export default function AdminWithdrawals({ withdrawals, onRefresh }: AdminWithdr
   const [activeReq, setActiveReq] = useState<WithdrawalRequest | null>(null);
   const [actionType, setActionType] = useState<'approve' | 'reject'>('approve');
   const [receiptOrReason, setReceiptOrReason] = useState('');
+  const [modalError, setModalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const filtered = withdrawals.filter((w) => filter === 'all' || w.status === filter);
@@ -28,18 +29,20 @@ export default function AdminWithdrawals({ withdrawals, onRefresh }: AdminWithdr
   const openActionModal = (req: WithdrawalRequest, type: 'approve' | 'reject') => {
     setActiveReq(req);
     setActionType(type);
+    setModalError(null);
     setReceiptOrReason(type === 'approve' ? `TX-${Math.floor(10000000 + Math.random() * 90000000)}` : 'بيانات الحساب غير مطابقة');
   };
 
   const handleConfirmAction = async () => {
     if (!activeReq) return;
     setLoading(true);
+    setModalError(null);
     try {
       await updateWithdrawalStatus(activeReq.id, actionType === 'approve' ? 'approved' : 'rejected', receiptOrReason.trim());
       onRefresh();
       setActiveReq(null);
-    } catch (e) {
-      console.error(e);
+    } catch (e: unknown) {
+      setModalError(e instanceof Error ? e.message : 'تعذر معالجة طلب السحب');
     } finally {
       setLoading(false);
     }
@@ -185,6 +188,11 @@ export default function AdminWithdrawals({ withdrawals, onRefresh }: AdminWithdr
             </p>
 
             <div className="space-y-3.5 text-xs font-medium text-neutral-700">
+              {modalError && (
+                <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
+                  {modalError}
+                </div>
+              )}
               <div className="p-3 bg-neutral-50 rounded-lg border border-border space-y-1">
                 <div className="flex justify-between">
                   <span className="text-neutral-500">طريقة التحويل:</span>

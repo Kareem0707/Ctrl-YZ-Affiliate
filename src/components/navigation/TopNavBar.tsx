@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -14,17 +15,27 @@ import {
   ArrowRight,
   User,
   Globe,
+  MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCart } from '@/contexts/CartContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 export default function TopNavBar() {
   const pathname = usePathname();
-  const { user, isAdmin, isMarketer, currentMarketer, loginAsDemoAdmin, loginAsDemoMarketer, logout } = useAuth();
+  const { user, isAdmin, isMarketer, isActiveMarketer, currentMarketer, logout } = useAuth();
   const { locale, toggleLanguage } = useLanguage();
   const { cartCount } = useCart();
+  const { settings } = useSettings();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+  const whatsappDigits = (settings.contactWhatsApp || '').replace(/[^\d]/g, '');
+  const whatsappUrl = whatsappDigits ? `https://wa.me/${whatsappDigits}` : null;
+  const announcementText =
+    locale === 'ar'
+      ? settings.announcement
+      : settings.announcementEn || settings.announcement;
 
   const navLinks = [
     {
@@ -35,20 +46,24 @@ export default function TopNavBar() {
       active: pathname === '/',
     },
     {
-      href: '/affiliate',
+      href: isActiveMarketer || isAdmin ? '/affiliate' : currentMarketer ? '/affiliate/status' : '/login',
       label_ar: 'بوابة المسوقين',
       label_en: 'Affiliate Portal',
       icon: TrendingUp,
       active: pathname.startsWith('/affiliate'),
       badge: 'أرباح',
     },
-    {
-      href: '/admin',
-      label_ar: 'لوحة الإدارة',
-      label_en: 'Admin Cockpit',
-      icon: ShieldCheck,
-      active: pathname.startsWith('/admin'),
-    },
+    ...(user?.role === 'ADMIN' && isAdmin
+      ? [
+          {
+            href: '/admin',
+            label_ar: 'لوحة الإدارة',
+            label_en: 'Admin Cockpit',
+            icon: ShieldCheck,
+            active: pathname.startsWith('/admin'),
+          },
+        ]
+      : []),
     {
       href: '/track-order',
       label_ar: 'تتبع الشحنة',
@@ -62,42 +77,54 @@ export default function TopNavBar() {
     <>
       {/* Editorial Announcement Strip */}
       <div className="bg-[#030303] text-white text-[12px] py-1.5 px-4 font-normal tracking-normal border-b border-zinc-800">
-        <div className="max-w-[1536px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-brand shadow-[0_0_8px_#0258ED] animate-pulse" />
-            <span className="text-zinc-300">
-              {locale === 'ar'
-                ? 'كامبين الشتاء الرسمي 2026 — عمولات تبدأ من 220 وتصل إلى 260 ج.م على كل قطعة هودي'
-                : 'Winter 2026 Official Campaign — Commissions from 220 to 260 EGP per hoodie'}
-            </span>
+        <div className="max-w-[1536px] mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-brand shadow-[0_0_8px_#0258ED] animate-pulse flex-shrink-0" />
+            <span className="text-zinc-300 truncate">{announcementText}</span>
           </div>
-          <Link
-            href="/affiliate"
-            className="hidden sm:inline-flex items-center gap-1 text-[#38BDF8] hover:text-white underline underline-offset-4 font-medium transition-colors"
-          >
-            <span>{locale === 'ar' ? 'ابدأ التسويق في الكامبين' : 'Join Campaign'}</span>
-            <ArrowRight size={12} className={locale === 'ar' ? 'rotate-180' : ''} />
-          </Link>
+          <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+              >
+                <MessageCircle size={12} />
+                <span>{locale === 'ar' ? 'دعم واتساب' : 'WhatsApp Support'}</span>
+              </a>
+            )}
+            <Link
+              href={isActiveMarketer ? '/affiliate' : '/join'}
+              className="inline-flex items-center gap-1 text-[#38BDF8] hover:text-white underline underline-offset-4 font-medium transition-colors"
+            >
+              <span>{locale === 'ar' ? 'ابدأ الربح كمسوق' : 'Earn as Affiliate'}</span>
+              <ArrowRight size={12} className={locale === 'ar' ? 'rotate-180' : ''} />
+            </Link>
+          </div>
         </div>
       </div>
 
       {/* Main Global Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border shadow-subtle">
-        <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
+        <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
           <div className="flex items-center justify-between h-14">
             {/* Brand Logo & Authority Label (Right in RTL) */}
             <div className="flex items-center gap-6">
               <Link href="/" className="flex items-center gap-3 group">
                 <div className="flex items-center py-1">
-                  <img
+                  <Image
                     src="/ctrl-logo-light.png"
-                    alt="Ctrl YZ"
+                    alt={settings.storeName || 'Ctrl YZ'}
+                    width={140}
+                    height={32}
+                    priority
                     className="h-7 sm:h-8 w-auto object-contain transition-transform duration-200 group-hover:scale-102"
                   />
                 </div>
                 <div className="hidden sm:flex flex-col border-r border-border pr-3">
                   <span className="text-[10px] font-bold text-brand tracking-widest uppercase leading-none">
-                    Official
+                    {settings.storeName || 'Ctrl YZ'}
                   </span>
                   <span className="text-[10px] font-medium text-ink-muted leading-tight mt-0.5">
                     {locale === 'ar' ? 'منصة الأفلييت والتجارة' : 'Affiliate Commerce'}
@@ -174,9 +201,12 @@ export default function TopNavBar() {
                     className="flex items-center gap-2 px-2 py-1.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 border border-border text-ink text-xs font-medium transition-all group"
                   >
                     {user.photoURL || currentMarketer?.avatar ? (
-                      <img
+                      <Image
                         src={user.photoURL || currentMarketer?.avatar || ''}
                         alt={user.displayName || 'User'}
+                        width={28}
+                        height={28}
+                        unoptimized
                         className="w-7 h-7 rounded-full object-cover ring-2 ring-brand/40 shadow-xs"
                         referrerPolicy="no-referrer"
                       />
@@ -190,7 +220,13 @@ export default function TopNavBar() {
                         {user.displayName?.split(' ')[0] || (isAdmin ? 'الإدارة' : 'المسوق')}
                       </span>
                       <span className="text-[10px] text-ink-muted leading-tight font-mono">
-                        {isAdmin ? 'مدير المنصة' : currentMarketer?.affiliateCode || 'مسوق معتمد'}
+                        {isAdmin
+                          ? 'مدير المنصة'
+                          : isActiveMarketer
+                          ? currentMarketer?.affiliateCode || 'مسوق معتمد'
+                          : currentMarketer
+                          ? 'قيد المراجعة'
+                          : 'حساب Google'}
                       </span>
                     </div>
                     <ChevronDown size={12} strokeWidth={1.6} className="text-ink-muted" />
@@ -204,9 +240,12 @@ export default function TopNavBar() {
                       {/* User Header */}
                       <div className="px-3.5 py-2.5 border-b border-border flex items-center gap-3">
                         {user.photoURL || currentMarketer?.avatar ? (
-                          <img
+                          <Image
                             src={user.photoURL || currentMarketer?.avatar || ''}
                             alt={user.displayName || 'User'}
+                            width={40}
+                            height={40}
+                            unoptimized
                             className="w-10 h-10 rounded-full object-cover ring-2 ring-brand/40 flex-shrink-0"
                             referrerPolicy="no-referrer"
                           />
@@ -223,7 +262,13 @@ export default function TopNavBar() {
                             {user.email || 'حساب مفعل'}
                           </p>
                           <span className="inline-block mt-0.5 text-[9px] font-semibold px-1.5 py-0.2 rounded bg-brand/10 text-brand">
-                            {isAdmin ? 'مدير المنصة' : 'مسوق معتمد'}
+                            {isAdmin
+                              ? 'مدير المنصة'
+                              : isActiveMarketer
+                              ? 'مسوق معتمد'
+                              : currentMarketer
+                              ? 'طلب انضمام قيد التفعيل'
+                              : 'مستخدم مسجل'}
                           </span>
                         </div>
                       </div>
@@ -253,11 +298,17 @@ export default function TopNavBar() {
                           </Link>
                         ) : (
                           <Link
-                            href="/affiliate"
+                            href={isActiveMarketer ? '/affiliate' : currentMarketer ? '/affiliate/status' : '/login?step=onboarding'}
                             className="w-full text-right px-3 py-2 rounded-lg text-xs hover:bg-neutral-50 flex items-center gap-2 text-ink font-medium transition-colors"
                           >
                             <TrendingUp size={14} className="text-emerald-600" />
-                            <span>بوابة المسوقين والأرباح</span>
+                            <span>
+                              {isActiveMarketer
+                                ? 'بوابة المسوقين والأرباح'
+                                : currentMarketer
+                                ? 'متابعة حالة طلب المسوق'
+                                : 'استكمال التسجيل كمسوق'}
+                            </span>
                           </Link>
                         )}
                       </div>

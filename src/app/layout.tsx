@@ -1,42 +1,38 @@
-'use client';
-
+import type { Metadata, Viewport } from 'next';
+import { cookies } from 'next/headers';
 import './globals.css';
-import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { CartProvider } from '@/contexts/CartContext';
-import TopNavBar from '@/components/navigation/TopNavBar';
+import Providers from '@/components/Providers';
+import type { Locale } from '@/contexts/LanguageContext';
 
-function HtmlWrapper({ children }: { children: React.ReactNode }) {
-  const { locale, dir } = useLanguage();
+export const metadata: Metadata = {
+  title: 'Ctrl YZ Affiliate | منصة المسوقين والتجارة الإلكترونية',
+  description:
+    'Ctrl YZ - كولكشن الشتاء الرسمي، التجارة والتسويق بالعمولة الموثوقة للمسوقين في مصر والشرق الأوسط',
+  icons: {
+    icon: '/ctrl-logo-transparent.png',
+  },
+};
 
-  return (
-    <html lang={locale} dir={dir}>
-      <head>
-        <title>Ctrl YZ Affiliate | منصة المسوقين والتجارة الإلكترونية</title>
-        <meta name="description" content="Ctrl YZ - كولكشن الشتاء الرسمي، التجارة والتسويق بالعمولة الموثوقة للمسوقين في مصر والشرق الأوسط" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-        <link rel="icon" href="/ctrl-logo-transparent.png" />
-      </head>
-      <body className="bg-canvas text-ink min-h-screen antialiased selection:bg-brand selection:text-white font-sans">
-        <TopNavBar />
-        {children}
-      </body>
-    </html>
-  );
-}
+// WCAG-compliant viewport (allows pinch-to-zoom on mobile; no maximumScale: 1 lock)
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieLocale = cookies().get('ctrl_yz_locale')?.value;
+  const initialLocale: Locale = cookieLocale === 'en' ? 'en' : 'ar';
+  const dir = initialLocale === 'ar' ? 'rtl' : 'ltr';
+
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <CartProvider>
-          <HtmlWrapper>{children}</HtmlWrapper>
-        </CartProvider>
-      </AuthProvider>
-    </LanguageProvider>
+    <html lang={initialLocale} dir={dir} suppressHydrationWarning>
+      <body className="bg-canvas text-ink min-h-screen antialiased selection:bg-brand selection:text-white font-sans">
+        <Providers initialLocale={initialLocale}>{children}</Providers>
+      </body>
+    </html>
   );
 }

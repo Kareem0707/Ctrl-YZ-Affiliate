@@ -5,8 +5,28 @@ export type OrderStatus =
   | 'shipped'
   | 'out_for_delivery'
   | 'delivered'
+  | 'partially_returned'
   | 'returned'
   | 'cancelled';
+
+export type OrderCommissionState =
+  | 'NONE'
+  | 'PENDING'
+  | 'LOCKED_RETURN_WINDOW'
+  | 'AVAILABLE'
+  | 'CLAWED_BACK'
+  | 'VOIDED';
+
+export interface ProductVariantDTO {
+  id: string;
+  productId: string;
+  sku: string;
+  size: string;
+  color: string;
+  colorHex?: string | null;
+  stock: number;
+  isActive: boolean;
+}
 
 export interface ProductColor {
   name: string;
@@ -38,20 +58,44 @@ export interface Product {
   adCopies?: AdCopy[];
   sizes: string[];
   colors: ProductColor[];
+  variants?: ProductVariantDTO[];
+  slug?: string;
   stock: number;
   isActive: boolean;
   isFeatured?: boolean;
+  archivedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface OrderItem {
+export interface CartItem {
+  id: string; // `${productId}-${size}-${color}`
   productId: string;
+  variantId?: string;
+  name: string;
+  name_ar?: string;
+  name_en?: string;
+  brand: string;
+  image: string;
+  size: string;
+  color: string;
+  price: number;
+  quantity: number;
+  maxStock: number;
+}
+
+export interface OrderItem {
+  id?: string;
+  productId: string;
+  variantId?: string | null;
   name: string;
   price: number; // Selling price to customer
   wholesalePrice: number; // Cost to marketer
+  costPrice?: number;
   commission: number; // Profit per item (price - wholesalePrice)
+  commissionAmount?: number; // Total line commission
   quantity: number;
+  returnedQuantity?: number;
   size: string;
   color?: string;
   image: string;
@@ -66,6 +110,7 @@ export interface OrderStatusHistoryItem {
 export interface Order {
   id: string;
   orderNumber: string;
+  source?: 'STOREFRONT' | 'AFFILIATE_DIRECT';
   affiliateId?: string;
   affiliateName?: string;
   affiliatePhone?: string;
@@ -84,6 +129,8 @@ export interface Order {
   affiliateCommission: number;
   platformProfit: number;
   status: OrderStatus;
+  dbStatus?: string;
+  commissionState?: OrderCommissionState;
   shippingCompany?: string;
   trackingNumber?: string;
   statusNotes?: string;
@@ -91,7 +138,8 @@ export interface Order {
   isCommissionPaid?: boolean;
   createdAt: string;
   updatedAt?: string;
-  deliveredAt?: string;
+  deliveredAt?: string | null;
+  returnWindowEndsAt?: string | null;
 }
 
 export interface MarketerPayoutInfo {
@@ -123,11 +171,14 @@ export interface Marketer {
   affiliateCode: string;
   walletBalance: number; // Available for withdrawal
   pendingBalance: number; // Pending with shipping
+  lockedBalance?: number; // Locked in apparel return window
   totalEarned: number;
   totalWithdrawn: number;
   ordersCount: number;
   deliveredCount: number;
   deliveryRate: number; // percentage (e.g. 85%)
+  clicksCount?: number;
+  conversionRate?: number; // percentage (orders / clicks * 100)
   status: MarketerStatus;
   payoutInfo: MarketerPayoutInfo;
   createdAt: string;
@@ -166,6 +217,68 @@ export interface PlatformSettings {
   contactWhatsApp: string;
   contactEmail: string;
   minWithdrawalAmount: number;
+  returnWindowDays?: number;
   announcement: string;
+  announcementEn?: string;
   categories: string[];
+}
+
+// ─── Phase 1A Relational & Pagination DTO Contracts ───────────
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  nextCursor: string | null;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationMeta;
+}
+
+export interface ProductVariantDTO {
+  id: string;
+  productId: string;
+  sku: string;
+  size: string;
+  color: string;
+  colorHex?: string | null;
+  stock: number;
+  isActive: boolean;
+}
+
+export type CommissionLifecycleState =
+  | 'NONE'
+  | 'PENDING'
+  | 'LOCKED_RETURN_WINDOW'
+  | 'AVAILABLE'
+  | 'CLAWED_BACK'
+  | 'VOIDED';
+
+export type WalletLedgerTypeDTO =
+  | 'COMMISSION_PENDING'
+  | 'COMMISSION_LOCKED'
+  | 'COMMISSION_RELEASED'
+  | 'COMMISSION_CLAWBACK'
+  | 'COMMISSION_VOIDED'
+  | 'WITHDRAWAL_HOLD'
+  | 'WITHDRAWAL_PAID'
+  | 'WITHDRAWAL_REFUND'
+  | 'ADJUSTMENT';
+
+export interface WalletLedgerEntryDTO {
+  id: string;
+  affiliateId: string;
+  orderId?: string | null;
+  payoutRequestId?: string | null;
+  type: WalletLedgerTypeDTO;
+  amount: number;
+  balanceAfter: number;
+  idempotencyKey: string;
+  note?: string | null;
+  createdAt: string;
 }

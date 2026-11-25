@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   PackagePlus,
   Truck,
@@ -12,35 +12,47 @@ import {
   MapPin,
   ArrowRight,
 } from 'lucide-react';
-import type { Product, GovernorateShipping, Order } from '@/lib/types';
-import { getShippingRates, createOrder } from '@/lib/dataService';
+import type { Product, Order, Marketer } from '@/lib/types';
+import { createOrder } from '@/lib/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface CreateOrderFormProps {
   products: Product[];
+  marketer?: Marketer | null;
   preSelectedProduct?: Product | null;
   onOrderSuccess?: (newOrder: Order) => void;
 }
 
 export default function CreateOrderForm({
   products,
+  marketer,
   preSelectedProduct,
   onOrderSuccess,
 }: CreateOrderFormProps) {
-  const { currentMarketer } = useAuth();
+  const { currentMarketer: authMarketer } = useAuth();
+  const activeMarketer = marketer ?? authMarketer;
   const { locale } = useLanguage();
+  const { shippingRates: governorates, currencySymbol } = useSettings();
+
+  // Only show active, in-stock products
+  const availableProducts = useMemo(
+    () => products.filter((p) => p.isActive && p.stock > 0),
+    [products]
+  );
 
   const [selectedProductId, setSelectedProductId] = useState<string>(
-    preSelectedProduct?.id || products[0]?.id || ''
+    preSelectedProduct && preSelectedProduct.stock > 0
+      ? preSelectedProduct.id
+      : availableProducts[0]?.id || ''
   );
   const [selectedSize, setSelectedSize] = useState<string>('L');
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
   const [customPrice, setCustomPrice] = useState<number>(590);
 
-  const [governorates, setGovernorates] = useState<GovernorateShipping[]>([]);
-  const [selectedGovId, setSelectedGovId] = useState<string>('cairo');
+  const [selectedGovId, setSelectedGovId] = useState<string>('');
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -53,23 +65,73 @@ export default function CreateOrderForm({
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // When selected product changes, reset pricing & sizes
-  const activeProduct = products.find((p) => p.id === selectedProductId) || products[0];
+  const preSelectedId = preSelectedProduct?.id;
+  const preSelectedActive = preSelectedProduct?.isActive;
+  const preSelectedStock = preSelectedProduct?.stock ?? 0;
 
+  // Keep selectedProductId valid if preSelectedProduct changes
   useEffect(() => {
-    if (activeProduct) {
-      setCustomPrice(activeProduct.suggestedPrice);
-      if (activeProduct.sizes.length > 0) setSelectedSize(activeProduct.sizes[0]);
-      if (activeProduct.colors.length > 0) setSelectedColor(activeProduct.colors[0].name);
+    if (preSelectedId && preSelectedActive && preSelectedStock > 0) {
+      setSelectedProductId(preSelectedId);
     }
-  }, [activeProduct]);
+  }, [preSelectedId, preSelectedActive, preSelectedStock]);
+
+  // Select first available product only if current selection is empty/invalid
+  useEffect(() => {
+    if (
+      availableProducts.length > 0 &&
+      !availableProducts.some((p) => p.id === selectedProductId)
+    ) {
+      setSelectedProductId(availableProducts[0].id);
+    }
+  }, [availableProducts, selectedProductId]);
+
+  const activeProduct =
+    availableProducts.find((p) => p.id === selectedProductId) || availableProducts[0] || null;
+  const activeProductId = activeProduct?.id;
+
+  // CRITICAL: depend ONLY on activeProduct?.id so background sync NEVER resets user inputs while typing!
+  useEffect(() => {
+    if (!activeProduct) return;
+    setCustomPrice(activeProduct.suggestedPrice);
+    const firstInStockVariant = activeProduct.variants?.find((v) => v.isActive && v.stock > 0);
+    setSelectedSize(firstInStockVariant?.size || activeProduct.sizes?.[0] || 'M');
+    setSelectedColor(firstInStockVariant?.color || activeProduct.colors?.[0]?.name || '');
+    setQuantity(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProductId]);
+
+  // Resolve exact variant & variant stock
+  const matchedVariant = useMemo(() => {
+    if (!activeProduct?.variants || activeProduct.variants.length === 0) return null;
+    const exact = activeProduct.variants.find(
+      (v) =>
+        v.isActive &&
+        v.size.toLowerCase() === selectedSize.toLowerCase() &&
+        (!selectedColor || v.color.toLowerCase() === selectedColor.toLowerCase())
+    );
+    if (exact) return exact;
+    return (
+      activeProduct.variants.find(
+        (v) => v.isActive && v.size.toLowerCase() === selectedSize.toLowerCase()
+      ) ?? null
+    );
+  }, [activeProduct?.variants, selectedSize, selectedColor]);
+
+  const variantStock = matchedVariant ? matchedVariant.stock : activeProduct?.stock ?? 0;
+
+  // Clamp quantity whenever selected variant changes
+  useEffect(() => {
+    if (variantStock > 0 && quantity > variantStock) {
+      setQuantity(variantStock);
+    }
+  }, [variantStock, quantity]);
 
   useEffect(() => {
-    getShippingRates().then((rates) => {
-      setGovernorates(rates);
-      if (rates.length > 0) setSelectedGovId(rates[0].id);
-    });
-  }, []);
+    if (governorates.length > 0 && !governorates.some((g) => g.id === selectedGovId)) {
+      setSelectedGovId(governorates[0].id);
+    }
+  }, [governorates, selectedGovId]);
 
   const currentGov = governorates.find((g) => g.id === selectedGovId) || governorates[0];
   const shippingFee = currentGov ? currentGov.fee : 45;
@@ -85,9 +147,16 @@ export default function CreateOrderForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeProduct) return;
+    if (!activeMarketer) {
+      setError('يجب تسجيل الدخول بحساب مسوق معتمد ونشط لتسجيل الطلبات');
+      return;
+    }
+    if (!activeProduct || variantStock <= 0) {
+      setError('المنتج أو المقاس/اللون المحدد غير متوفر حالياً في المخزون');
+      return;
+    }
     if (isBelowMin) {
-      setError(`سعر البيع لا يمكن أن يقل عن ${minPrice} ج.م`);
+      setError(`سعر البيع لا يمكن أن يقل عن ${minPrice} ${currencySymbol}`);
       return;
     }
     if (!customerName.trim() || !customerPhone.trim() || !customerAddress.trim()) {
@@ -95,33 +164,29 @@ export default function CreateOrderForm({
       return;
     }
 
+    const safeQty = Math.min(variantStock, Math.max(1, Math.floor(quantity)));
+
     setLoading(true);
     setError(null);
 
     try {
-      const orderPayload: Partial<Order> = {
-        affiliateId: currentMarketer?.id || 'demo-marketer-ahmed',
-        affiliateName: currentMarketer?.name || 'أحمد عادل',
-        affiliatePhone: currentMarketer?.phone || '01012345678',
+      const orderPayload = {
+        source: 'AFFILIATE_DIRECT' as const,
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
-        customerPhone2: customerPhone2.trim() || undefined,
-        governorate: currentGov ? (locale === 'ar' ? currentGov.governorate_ar : currentGov.governorate_en) : 'القاهرة',
+        customerAltPhone: customerPhone2.trim() || undefined,
+        governorate: currentGov ? currentGov.governorate_ar : 'القاهرة',
         customerCity: customerCity.trim() || (currentGov ? currentGov.governorate_ar : 'القاهرة'),
         customerAddress: customerAddress.trim(),
         notes: notes.trim() || undefined,
-        shippingFee,
         items: [
           {
             productId: activeProduct.id,
-            name: activeProduct.name_ar,
-            price: customPrice,
-            wholesalePrice: wholesale,
-            commission: profitPerItem,
-            quantity,
+            variantId: matchedVariant?.id,
             size: selectedSize,
             color: selectedColor,
-            image: activeProduct.images[0] || '',
+            quantity: safeQty,
+            customUnitPrice: customPrice,
           },
         ],
       };
@@ -229,13 +294,18 @@ export default function CreateOrderForm({
             <select
               value={selectedProductId}
               onChange={(e) => setSelectedProductId(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border text-xs font-semibold text-ink focus:outline-none focus:border-ink"
+              disabled={availableProducts.length === 0}
+              className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-border text-xs font-semibold text-ink focus:outline-none focus:border-ink disabled:opacity-60"
             >
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name_ar} (جملة: {p.wholesalePrice} ج.م | مقترح: {p.suggestedPrice} ج.م | عمولة: {p.commission} ج.م)
-                </option>
-              ))}
+              {availableProducts.length === 0 ? (
+                <option value="">لا توجد منتجات متوفرة حالياً في المخزن</option>
+              ) : (
+                availableProducts.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name_ar} (متاح: {p.stock} | جملة: {p.wholesalePrice} {currencySymbol} | عمولة: {p.commission} {currencySymbol})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -278,14 +348,26 @@ export default function CreateOrderForm({
               <div className="flex items-center gap-2">
                 <input
                   type="number"
-                  min="1"
-                  max={activeProduct?.stock || 50}
+                  min={1}
+                  max={Math.max(1, variantStock)}
+                  disabled={variantStock <= 0}
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-                  className="w-full px-3 py-2 rounded-lg bg-white border border-border text-xs font-semibold focus:outline-none focus:border-ink text-center num-tabular"
+                  onChange={(e) => {
+                    const parsed = parseInt(e.target.value, 10);
+                    if (Number.isNaN(parsed)) {
+                      setQuantity(1);
+                    } else {
+                      setQuantity(Math.min(Math.max(1, variantStock), Math.max(1, parsed)));
+                    }
+                  }}
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-border text-xs font-semibold focus:outline-none focus:border-ink text-center num-tabular disabled:opacity-50"
                 />
-                <span className="text-[11px] text-neutral-400 whitespace-nowrap">
-                  (متاح {activeProduct?.stock || 0})
+                <span
+                  className={`text-[11px] whitespace-nowrap font-medium ${
+                    variantStock <= 0 ? 'text-rose-600' : 'text-neutral-500'
+                  }`}
+                >
+                  {variantStock <= 0 ? '(نفد هذا المقاس)' : `(متاح ${variantStock})`}
                 </span>
               </div>
             </div>
@@ -386,7 +468,7 @@ export default function CreateOrderForm({
               >
                 {governorates.map((gov) => (
                   <option key={gov.id} value={gov.id}>
-                    {locale === 'ar' ? gov.governorate_ar : gov.governorate_en} - (شحن: {gov.fee} ج.م | {gov.deliveryTime})
+                    {locale === 'ar' ? gov.governorate_ar : gov.governorate_en} - (شحن: {gov.fee} {currencySymbol} | {gov.deliveryTime})
                   </option>
                 ))}
               </select>

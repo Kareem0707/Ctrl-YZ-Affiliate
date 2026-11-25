@@ -14,6 +14,7 @@ import {
 import type { Product } from '@/lib/types';
 import ProfitCalculatorModal from './ProfitCalculatorModal';
 import AdCopiesModal from './AdCopiesModal';
+import SafeProductImage from '@/components/common/SafeProductImage';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AffiliateProductsProps {
@@ -129,15 +130,22 @@ export default function AffiliateProducts({
           >
             {/* Clean Full-View Image Area (Complete from top to bottom) */}
             <div className="relative aspect-[1245/1600] w-full bg-zinc-950 overflow-hidden border-b border-border flex items-center justify-center">
-              <img
-                src={prod.images[0] || '/products/06f6580b-e809-4fb1-a16b-b668d10ab5a8.jfif'}
+              <SafeProductImage
+                src={prod.images?.[0]}
                 alt={prod.name_ar}
-                className="w-full h-full object-contain group-hover:scale-102 transition-transform duration-300"
+                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                className="object-contain group-hover:scale-102 transition-transform duration-300"
               />
               {/* Subtle stock indicator */}
-              <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs border border-border px-2 py-0.5 rounded-md text-[11px] font-medium text-neutral-600 shadow-xs">
-                متاح {prod.stock} قطعة
-              </div>
+              {prod.stock <= 0 ? (
+                <div className="absolute top-3 right-3 bg-rose-600 text-white px-2.5 py-0.5 rounded-md text-[11px] font-bold shadow-xs">
+                  نفد المخزون
+                </div>
+              ) : (
+                <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs border border-border px-2 py-0.5 rounded-md text-[11px] font-medium text-neutral-600 shadow-xs num-tabular">
+                  متاح {prod.stock} قطعة
+                </div>
+              )}
             </div>
 
             {/* Content Body */}
@@ -206,7 +214,8 @@ export default function AffiliateProducts({
 
               <button
                 onClick={() => onSelectForOrder(prod)}
-                className="py-2 px-3.5 rounded-lg bg-ink hover:bg-neutral-800 text-white text-xs font-semibold flex items-center gap-1.5 active:scale-[0.98] transition-all"
+                disabled={prod.stock <= 0}
+                className="py-2 px-3.5 rounded-lg bg-ink hover:bg-neutral-800 disabled:bg-neutral-300 disabled:text-neutral-600 disabled:cursor-not-allowed text-white text-xs font-semibold flex items-center gap-1.5 active:scale-[0.98] transition-all"
               >
                 <PackagePlus size={14} strokeWidth={1.6} />
                 <span>تسجيل طلب</span>

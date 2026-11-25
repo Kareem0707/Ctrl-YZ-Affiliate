@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   X,
@@ -19,6 +19,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import type { Marketer } from '@/lib/types';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface MarketerGuideModalProps {
   isOpen: boolean;
@@ -27,9 +28,24 @@ interface MarketerGuideModalProps {
 }
 
 export default function MarketerGuideModal({ isOpen, onClose, marketer }: MarketerGuideModalProps) {
+  const { settings, currencySymbol } = useSettings();
   const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'orders' | 'payouts'>('overview');
+  const [siteOrigin, setSiteOrigin] = useState<string>(
+    (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '')
+  );
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.origin) {
+      setSiteOrigin(window.location.origin);
+    }
+  }, []);
 
   if (!isOpen) return null;
+
+  const encodedCode = encodeURIComponent(marketer?.affiliateCode || 'YOUR_CODE');
+  const referralExampleUrl = `${siteOrigin || 'https://ctrl-yz-affiliate.vercel.app'}/r/${encodedCode}`;
+  const returnWindowDays = settings.returnWindowDays ?? 7;
+  const minWithdrawal = settings.minWithdrawalAmount || 200;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
@@ -169,11 +185,11 @@ export default function MarketerGuideModal({ isOpen, onClose, marketer }: Market
               <p>
                 أي رابط تشاركه مع عملائك يضاف إليه كودك:
                 <code className="block mt-1 p-2 rounded-lg bg-white border border-border font-mono text-[11px] text-brand select-all" dir="ltr">
-                  https://ctrlyz-affiliate.vercel.app/?ref={marketer?.affiliateCode || 'YOUR_CODE'}
+                  {referralExampleUrl}
                 </code>
               </p>
               <p className="text-[11px]">
-                بمجرد دخول العميل عبر هذا الرابط، يُحفظ كودك في متصفحه وتُسجل أي عملية شراء باسمك وتذهب عمولتها لمحفظتك فوراً.
+                بمجرد دخول العميل عبر هذا الرابط، يُحفظ كوكي تتبع رسمي لمدة 30 يوماً وتُسجل أي عملية شراء باسمك وتُضاف عمولتها لمحفظتك تلقائياً.
               </p>
             </div>
 
@@ -183,7 +199,7 @@ export default function MarketerGuideModal({ isOpen, onClose, marketer }: Market
                 <span>تحميل الميديا والنصوص الإعلانية</span>
               </h5>
               <p>
-                في صفحة كل منتج في "بوابة المسوقين"، ستجد زراً لتحميل مجلد صور وفيديوهات إعلانية احترافية جاهزة بجودة عالية بدون علامة مائية، بالإضافة إلى نصوص إعلانية (Ad Copies) مقترحة للفيسبوك وتيك توك.
+                في صفحة كل منتج في &quot;بوابة المسوقين&quot;، ستجد زراً لتحميل مجلد صور وفيديوهات إعلانية احترافية جاهزة بجودة عالية بدون علامة مائية، بالإضافة إلى نصوص إعلانية (Ad Copies) مقترحة للفيسبوك وتيك توك.
               </p>
             </div>
           </div>
@@ -201,7 +217,7 @@ export default function MarketerGuideModal({ isOpen, onClose, marketer }: Market
                 <strong>1. العميل يطلب بنفسه:</strong> يفتح رابط متجرك، يختار المقاس ويملأ عنوانه ورقم هاتفه.
               </p>
               <p>
-                <strong>2. أنت تسجل للعميل (Direct Entry):</strong> إذا تواصل معك العميل على واتساب أو ماسنجر، يمكنك الدخول إلى "تسجيل طلب جديد" في لوحتك وإدخال بياناته بضغطة زر.
+                <strong>2. أنت تسجل للعميل (Direct Entry):</strong> إذا تواصل معك العميل على واتساب أو ماسنجر، يمكنك الدخول إلى &quot;تسجيل طلب جديد&quot; في لوحتك وإدخال بياناته بضغطة زر.
               </p>
             </div>
 
@@ -226,11 +242,11 @@ export default function MarketerGuideModal({ isOpen, onClose, marketer }: Market
                 <span>مواعيد وسرعة سحب الأرباح</span>
               </h5>
               <p>
-                بمجرد تسليم الشحنة للعميل بنجاح، يتحول مبلغ العمولة مباشرة من <strong>"الرصيد المعلق"</strong> إلى <strong>"الرصيد المتاح للسحب"</strong>.
+                بعد تسليم الشحنة للعميل بنجاح، تنتقل العمولة إلى <strong>&quot;الرصيد المحجوز لفترة الاسترجاع&quot;</strong> ({returnWindowDays} أيام)، ثم تتحرر تلقائياً إلى <strong>&quot;الرصيد المتاح للسحب&quot;</strong>.
               </p>
               <ul className="list-disc list-inside space-y-1 pr-2">
-                <li>السحب متاح يومياً وبشكل فوري.</li>
-                <li>يتم التحويل على فودافون كاش أو إنستاباي خلال ساعات من تقديم الطلب.</li>
+                <li>الحد الأدنى لطلب السحب حالياً هو <strong>{minWithdrawal} {currencySymbol}</strong>.</li>
+                <li>يتم التحويل على فودافون كاش أو إنستاباي خلال 24 ساعة من تقديم الطلب.</li>
                 <li>سجل كامل ومفصل لكل عملية تحويل مع رقم المعاملة للشفافية المطلقة.</li>
               </ul>
             </div>

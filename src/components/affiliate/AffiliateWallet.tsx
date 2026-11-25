@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Wallet,
   ArrowDownLeft,
   Clock,
+  Lock,
   CheckCircle2,
-  XCircle,
   AlertCircle,
   CreditCard,
   Building,
@@ -19,6 +19,7 @@ import type { Marketer, WithdrawalRequest } from '@/lib/types';
 import { getWithdrawalsByMarketer, createWithdrawalRequest } from '@/lib/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface AffiliateWalletProps {
   marketer: Marketer;
@@ -27,30 +28,42 @@ interface AffiliateWalletProps {
 export default function AffiliateWallet({ marketer }: AffiliateWalletProps) {
   const { refreshMarketer } = useAuth();
   const { locale } = useLanguage();
+  const { settings, currencySymbol } = useSettings();
+
+  const minWithdrawal = Math.max(1, Number(settings.minWithdrawalAmount) || 200);
+  const returnWindowDays = settings.returnWindowDays ?? 7;
+  const lockedBalance = marketer.lockedBalance ?? 0;
 
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [method, setMethod] = useState<'vodafone_cash' | 'instapay' | 'bank_transfer'>('vodafone_cash');
-  const [amount, setAmount] = useState<number>(500);
+  const [amount, setAmount] = useState<number>(minWithdrawal);
   const [accountDetails, setAccountDetails] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const fetchWithdrawals = async () => {
+  const fetchWithdrawals = useCallback(async () => {
     const list = await getWithdrawalsByMarketer(marketer.id);
     setWithdrawals(list);
-  };
+  }, [marketer.id]);
 
   useEffect(() => {
-    fetchWithdrawals();
+    void fetchWithdrawals();
+  }, [fetchWithdrawals]);
+
+  useEffect(() => {
     setAccountDetails(marketer.payoutInfo?.accountNumber || marketer.phone || '');
-  }, [marketer]);
+  }, [marketer.payoutInfo?.accountNumber, marketer.phone]);
+
+  const quickAmounts = Array.from(
+    new Set([minWithdrawal, Math.max(500, minWithdrawal * 2), Math.max(1000, minWithdrawal * 4)])
+  );
 
   const handleWithdrawSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (amount < 200) {
-      setError('الحد الأدنى لطلب سحب الأرباح هو 200 ج.م');
+    if (amount < minWithdrawal) {
+      setError(`الحد الأدنى لطلب سحب الأرباح هو ${minWithdrawal} ${currencySymbol}`);
       return;
     }
     if (amount > marketer.walletBalance) {
@@ -82,8 +95,8 @@ export default function AffiliateWallet({ marketer }: AffiliateWalletProps) {
         setModalOpen(false);
         setSuccess(null);
       }, 2000);
-    } catch (err: any) {
-      setError(err?.message || 'حدث خطأ أثناء إرسال طلب السحب');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'حدث خطأ أثناء إرسال طلب السحب');
     } finally {
       setLoading(false);
     }
@@ -92,7 +105,7 @@ export default function AffiliateWallet({ marketer }: AffiliateWalletProps) {
   return (
     <div className="space-y-6">
       {/* Wallet Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Available Balance Card */}
         <div className="bg-ink text-white p-5 rounded-xl border border-neutral-800 flex flex-col justify-between">
           <div>
@@ -107,19 +120,43 @@ export default function AffiliateWallet({ marketer }: AffiliateWalletProps) {
             </div>
             <div className="text-2xl font-bold font-mono text-white num-tabular mb-1">
               {marketer.walletBalance.toLocaleString()}{' '}
-              <span className="text-xs font-sans font-normal text-neutral-400">ج.م</span>
+              <span className="text-xs font-sans font-normal text-neutral-400">{currencySymbol}</span>
             </div>
           </div>
           <button
             onClick={() => {
               setModalOpen(true);
-              setAmount(Math.min(marketer.walletBalance, 1000));
+              setError(null);
+              setAmount(Math.min(marketer.walletBalance, Math.max(minWithdrawal, 1000)));
             }}
-            disabled={marketer.walletBalance < 200}
+            disabled={marketer.walletBalance < minWithdrawal}
             className="w-full mt-4 py-2 bg-white text-ink text-xs font-semibold rounded-lg hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {locale === 'ar' ? 'طلب سحب الأرباح' : 'Withdraw'}
           </button>
+        </div>
+
+        {/* Locked Balance (Apparel Return Window) */}
+        <div className="bg-white p-5 rounded-xl border border-amber-200/80 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-start mb-3">
+              <span className="text-[11px] font-medium text-amber-800 uppercase tracking-wider">
+                {locale === 'ar' ? 'محجوز (فترة الاسترجاع)' : 'Locked (Return Window)'}
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+                <Lock size={16} strokeWidth={1.6} />
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-amber-700 font-mono num-tabular">
+              {lockedBalance.toLocaleString()}{' '}
+              <span className="text-xs font-sans text-neutral-400 font-normal">{currencySymbol}</span>
+            </div>
+          </div>
+          <p className="text-[11px] text-neutral-500 mt-3 pt-3 border-t border-border">
+            {returnWindowDays === 0
+              ? 'فترة الاسترجاع 0 يوم — يتحرر الرصيد فور التسليم'
+              : `تُفرج للرصيد المتاح بعد مرور ${returnWindowDays} أيام من تسليم الطلب`}
+          </p>
         </div>
 
         {/* Pending Balance */}
@@ -135,11 +172,11 @@ export default function AffiliateWallet({ marketer }: AffiliateWalletProps) {
             </div>
             <div className="text-2xl font-bold text-ink font-mono num-tabular">
               {marketer.pendingBalance.toLocaleString()}{' '}
-              <span className="text-xs font-sans text-neutral-400 font-normal">ج.م</span>
+              <span className="text-xs font-sans text-neutral-400 font-normal">{currencySymbol}</span>
             </div>
           </div>
           <p className="text-[11px] text-neutral-400 mt-3 pt-3 border-t border-border">
-            يتحول للرصيد المتاح تلقائياً فور تسليم الطلب
+            ينتقل لفترة الضمان ({returnWindowDays} أيام) فور استلام العميل
           </p>
         </div>
 
@@ -156,11 +193,11 @@ export default function AffiliateWallet({ marketer }: AffiliateWalletProps) {
             </div>
             <div className="text-2xl font-bold text-ink font-mono num-tabular">
               {marketer.totalWithdrawn.toLocaleString()}{' '}
-              <span className="text-xs font-sans text-neutral-400 font-normal">ج.م</span>
+              <span className="text-xs font-sans text-neutral-400 font-normal">{currencySymbol}</span>
             </div>
           </div>
           <p className="text-[11px] text-neutral-400 mt-3 pt-3 border-t border-border num-tabular">
-            إجمالي الأرباح الكلية: {marketer.totalEarned.toLocaleString()} ج.م
+            إجمالي الأرباح الكلية: {marketer.totalEarned.toLocaleString()} {currencySymbol}
           </p>
         </div>
 
@@ -196,12 +233,14 @@ export default function AffiliateWallet({ marketer }: AffiliateWalletProps) {
           <h3 className="text-sm font-bold text-ink">
             {locale === 'ar' ? 'سجل طلبات سحب الأرباح' : 'Withdrawal Requests'}
           </h3>
-          <span className="text-xs text-neutral-400">التحويل خلال 24 ساعة كحد أقصى</span>
+          <span className="text-xs text-neutral-400 num-tabular">
+            الحد الأدنى للسحب: {minWithdrawal} {currencySymbol} • التحويل خلال 24 ساعة
+          </span>
         </div>
 
         {withdrawals.length === 0 ? (
           <div className="text-center py-8 text-neutral-400 text-xs">
-            لا توجد طلبات سحب سابقة. يمكنك طلب سحب أرباحك في أي وقت عند وصول رصيدك لـ 200 ج.م
+            لا توجد طلبات سحب سابقة. يمكنك طلب سحب أرباحك في أي وقت عند وصول رصيدك المتاح لـ {minWithdrawal} {currencySymbol}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -221,7 +260,9 @@ export default function AffiliateWallet({ marketer }: AffiliateWalletProps) {
                 {withdrawals.map((w) => (
                   <tr key={w.id} className="hover:bg-neutral-50/50 transition-colors">
                     <td className="py-2.5 px-3 font-mono font-semibold text-ink num-tabular">{w.requestId}</td>
-                    <td className="py-2.5 px-3 font-mono font-bold text-ink num-tabular">{w.amount} ج.م</td>
+                    <td className="py-2.5 px-3 font-mono font-bold text-ink num-tabular">
+                      {w.amount} {currencySymbol}
+                    </td>
                     <td className="py-2.5 px-3 font-medium text-neutral-700">
                       {w.paymentMethod === 'vodafone_cash' && 'فودافون كاش'}
                       {w.paymentMethod === 'instapay' && 'انستاباي'}
@@ -282,7 +323,10 @@ export default function AffiliateWallet({ marketer }: AffiliateWalletProps) {
                   {locale === 'ar' ? 'طلب سحب أرباح' : 'Withdraw Earnings'}
                 </h3>
                 <p className="text-xs text-neutral-500">
-                  رصيدك المتاح للسحب: <span className="font-bold text-emerald-700 num-tabular">{marketer.walletBalance} ج.م</span>
+                  رصيدك المتاح للسحب:{' '}
+                  <span className="font-bold text-emerald-700 num-tabular">
+                    {marketer.walletBalance} {currencySymbol}
+                  </span>
                 </p>
               </div>
             </div>
@@ -352,31 +396,34 @@ export default function AffiliateWallet({ marketer }: AffiliateWalletProps) {
               {/* Amount */}
               <div>
                 <label className="text-xs font-medium text-neutral-700 block mb-1">
-                  {locale === 'ar' ? 'المبلغ المطلوب سحبه (ج.م) *' : 'Amount (EGP) *'}
+                  {locale === 'ar'
+                    ? `المبلغ المطلوب سحبه (${currencySymbol}) * — الحد الأدنى ${minWithdrawal}`
+                    : `Amount (${currencySymbol}) * — Min ${minWithdrawal}`}
                 </label>
                 <div className="relative">
                   <input
                     type="number"
-                    min={200}
+                    min={minWithdrawal}
                     max={marketer.walletBalance}
+                    step="0.01"
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
                     className="w-full px-3.5 py-2 rounded-lg border border-border text-sm font-semibold focus:outline-none focus:border-ink num-tabular"
                     required
                   />
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-neutral-400">
-                    ج.م
+                    {currencySymbol}
                   </span>
                 </div>
-                <div className="flex gap-1.5 mt-2">
-                  {[200, 500, 1000].map((v) => (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {quickAmounts.map((v) => (
                     <button
                       key={v}
                       type="button"
                       onClick={() => setAmount(Math.min(v, marketer.walletBalance))}
                       className="px-2 py-0.5 rounded bg-neutral-100 hover:bg-neutral-200 text-[11px] font-medium text-neutral-700 num-tabular"
                     >
-                      {v} ج.م
+                      {v} {currencySymbol}
                     </button>
                   ))}
                   <button
@@ -414,7 +461,7 @@ export default function AffiliateWallet({ marketer }: AffiliateWalletProps) {
 
               <button
                 type="submit"
-                disabled={loading || amount > marketer.walletBalance || amount < 200}
+                disabled={loading || amount > marketer.walletBalance || amount < minWithdrawal}
                 className="w-full py-2.5 bg-ink hover:bg-neutral-800 text-white font-medium text-xs rounded-lg active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-4"
               >
                 {loading ? (

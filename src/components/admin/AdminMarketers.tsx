@@ -45,6 +45,7 @@ export default function AdminMarketers({ marketers, onRefresh }: AdminMarketersP
   const [newEmail, setNewEmail] = useState('');
   const [newAffiliateCode, setNewAffiliateCode] = useState('');
   const [loadingAction, setLoadingAction] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Approval custom code state
   const [customApproveCode, setCustomApproveCode] = useState('');
@@ -69,27 +70,44 @@ export default function AdminMarketers({ marketers, onRefresh }: AdminMarketersP
     return true;
   });
 
-  const handleToggleStatus = async (id: string) => {
-    await toggleMarketerStatus(id);
-    onRefresh();
+  const handleToggleStatus = async (id: string, currentStatus: MarketerStatus) => {
+    setActionError(null);
+    setLoadingAction(true);
+    try {
+      await toggleMarketerStatus(id, currentStatus);
+      onRefresh();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'تعذر تحديث حالة المسوق';
+      setActionError(msg);
+    } finally {
+      setLoadingAction(false);
+    }
   };
 
   const handleOpenApplicant = (m: Marketer) => {
+    setActionError(null);
     setSelectedApplicant(m);
-    setCustomApproveCode(m.affiliateCode || `YZ-${m.name.slice(0, 4).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`);
+    const fallbackAsciiCode = `YZ-${Math.floor(100000 + Math.random() * 900000)}`;
+    setCustomApproveCode(
+      m.affiliateCode && /^[A-Z0-9_-]{3,24}$/.test(m.affiliateCode)
+        ? m.affiliateCode
+        : fallbackAsciiCode
+    );
     setRejectPromptOpen(false);
     setRejectReason('');
   };
 
   const handleApprove = async () => {
     if (!selectedApplicant) return;
+    setActionError(null);
     setLoadingAction(true);
     try {
       await approveMarketer(selectedApplicant.id, customApproveCode);
       onRefresh();
       setSelectedApplicant(null);
-    } catch (e) {
-      console.error(e);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'تعذر اعتماد طلب المسوق';
+      setActionError(msg);
     } finally {
       setLoadingAction(false);
     }
@@ -97,14 +115,16 @@ export default function AdminMarketers({ marketers, onRefresh }: AdminMarketersP
 
   const handleReject = async () => {
     if (!selectedApplicant) return;
+    setActionError(null);
     setLoadingAction(true);
     try {
       await rejectMarketer(selectedApplicant.id, rejectReason || 'لم يتم استيفاء شروط الانضمام');
       onRefresh();
       setSelectedApplicant(null);
       setRejectPromptOpen(false);
-    } catch (e) {
-      console.error(e);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'تعذر رفض طلب المسوق';
+      setActionError(msg);
     } finally {
       setLoadingAction(false);
     }
@@ -114,14 +134,14 @@ export default function AdminMarketers({ marketers, onRefresh }: AdminMarketersP
     e.preventDefault();
     if (!newName.trim() || !newPhone.trim()) return;
 
+    setActionError(null);
     setLoadingAction(true);
     try {
       await saveMarketer({
         name: newName.trim(),
         phone: newPhone.trim(),
-        email: newEmail.trim() || `${newPhone.trim()}@affiliate.com`,
-        affiliateCode: newAffiliateCode.trim() || `AFF-${Math.floor(100 + Math.random() * 900)}`,
-        status: 'active',
+        email: newEmail.trim() || `${newPhone.trim()}@affiliate.ctrlyz.local`,
+        affiliateCode: newAffiliateCode.trim().toUpperCase() || undefined,
       });
       onRefresh();
       setCreateModalOpen(false);
@@ -129,8 +149,9 @@ export default function AdminMarketers({ marketers, onRefresh }: AdminMarketersP
       setNewPhone('');
       setNewEmail('');
       setNewAffiliateCode('');
-    } catch (err) {
-      console.error(err);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'تعذر إنشاء حساب المسوق';
+      setActionError(msg);
     } finally {
       setLoadingAction(false);
     }
@@ -138,6 +159,21 @@ export default function AdminMarketers({ marketers, onRefresh }: AdminMarketersP
 
   return (
     <div className="space-y-5">
+      {actionError && !selectedApplicant && !createModalOpen && (
+        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={15} className="flex-shrink-0" />
+            <span className="font-semibold">{actionError}</span>
+          </div>
+          <button
+            onClick={() => setActionError(null)}
+            className="text-red-500 hover:text-red-800"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Pending Applications Alert Banner */}
       {pendingCount > 0 && (
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
@@ -335,7 +371,11 @@ export default function AdminMarketers({ marketers, onRefresh }: AdminMarketersP
                         {isPending && (
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                             <Clock size={11} />
-                            <span>قيد المراجعة</span>
+                            <span>
+                              {(m as Marketer & { dbStatus?: string }).dbStatus === 'UNVERIFIED'
+                                ? 'بانتظار التحقق (OTP)'
+                                : 'قيد المراجعة'}
+                            </span>
                           </span>
                         )}
                         {isActive && (
@@ -372,8 +412,9 @@ export default function AdminMarketers({ marketers, onRefresh }: AdminMarketersP
                           {/* Quick Toggle Status */}
                           {!isPending && (
                             <button
-                              onClick={() => handleToggleStatus(m.id)}
-                              className={`p-1.5 rounded-lg text-xs font-semibold transition ${
+                              onClick={() => handleToggleStatus(m.id, m.status)}
+                              disabled={loadingAction}
+                              className={`p-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50 ${
                                 isActive
                                   ? 'text-neutral-400 hover:text-red-600 hover:bg-red-50'
                                   : 'text-emerald-600 hover:bg-emerald-50'
@@ -572,6 +613,12 @@ export default function AdminMarketers({ marketers, onRefresh }: AdminMarketersP
             {selectedApplicant.status === 'pending' && (
               <div className="p-4 rounded-xl bg-neutral-100 border border-neutral-300 space-y-3">
                 <h4 className="font-bold text-ink text-xs">قرار المشرف الإداري:</h4>
+                {actionError && (
+                  <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-1.5">
+                    <AlertCircle size={14} className="flex-shrink-0" />
+                    <span>{actionError}</span>
+                  </div>
+                )}
 
                 {!rejectPromptOpen ? (
                   <div className="space-y-3">
@@ -670,6 +717,12 @@ export default function AdminMarketers({ marketers, onRefresh }: AdminMarketersP
             </div>
 
             <form onSubmit={handleCreateMarketer} className="space-y-3.5 text-xs font-semibold text-neutral-700">
+              {actionError && (
+                <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-1.5">
+                  <AlertCircle size={14} className="flex-shrink-0" />
+                  <span>{actionError}</span>
+                </div>
+              )}
               <div>
                 <label className="block mb-1 text-ink">الاسم الكامل *</label>
                 <input

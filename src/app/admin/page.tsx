@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Package,
@@ -34,8 +36,9 @@ import AdminSettings from '@/components/admin/AdminSettings';
 type AdminTab = 'dashboard' | 'products' | 'orders' | 'marketers' | 'withdrawals' | 'shipping' | 'settings';
 
 export default function AdminPage() {
-  const { isAdmin, loginAsDemoAdmin } = useAuth();
-  const { locale } = useLanguage();
+  const router = useRouter();
+  const { isAdmin, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -43,6 +46,12 @@ export default function AdminPage() {
   const [marketers, setMarketers] = useState<Marketer[]>([]);
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !isAdmin) {
+      router.replace('/login?redirect=/admin');
+    }
+  }, [authLoading, isAdmin, router]);
 
   // Real-time synchronization hook: automatically refreshes data when changes occur on server
   const { isConnected } = useRealtimeSync(() => {
@@ -53,7 +62,7 @@ export default function AdminPage() {
     try {
       const [ordList, prodList, markList, withList] = await Promise.all([
         getOrders(),
-        getProducts(),
+        getProducts({ includeInactive: true }),
         getMarketers(),
         getWithdrawals(),
       ]);
@@ -83,19 +92,27 @@ export default function AdminPage() {
   const pendingOrdersCount = orders.filter((o) => o.status === 'pending').length;
   const pendingMarketersCount = marketers.filter((m) => m.status === 'pending').length;
 
+  if (authLoading || !isAdmin) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center bg-canvas text-xs text-ink-muted">
+        جاري التحقق من صلاحيات الإدارة...
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-canvas pb-24">
       {/* Top Admin Header Bar */}
-      <section className="bg-ink text-white py-4 px-4 sm:px-6 lg:px-8 border-b border-neutral-800">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <section className="bg-ink text-white py-4 border-b border-neutral-800">
+        <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="h-10 px-3 rounded-lg bg-neutral-900 border border-neutral-700 flex items-center justify-center">
-              <img src="/ctrl-logo-transparent.png" alt="Ctrl YZ" className="h-5 w-auto object-contain" />
+              <Image src="/ctrl-logo-transparent.png" alt="Ctrl YZ" width={120} height={24} className="h-5 w-auto object-contain" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-sm sm:text-base font-bold text-white">
-                  لوحة العمليات المركزية
+                  {t('adminTabs.consoleTitle')}
                 </h1>
                 <span className="text-[10px] bg-brand/20 text-[#38BDF8] border border-brand/40 px-2 py-0.5 rounded font-mono">
                   Operations Console
@@ -106,49 +123,41 @@ export default function AdminPage() {
                 </span>
               </div>
               <p className="text-xs text-neutral-400 mt-0.5">
-                قاعدة بيانات حية متصلة — إرسال، استقبال، ومزامنة فورية للطلبات والعمولات
+                {t('adminTabs.consoleSubtitle')}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5">
-            {!isAdmin && (
-              <button
-                onClick={loginAsDemoAdmin}
-                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition-colors"
-              >
-                تفعيل صلاحية الأدمن التجريبية
-              </button>
-            )}
             <Link
               href="/affiliate"
               className="px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-medium border border-neutral-700 flex items-center gap-1.5 transition-colors"
             >
               <TrendingUp size={13} strokeWidth={1.6} className="text-emerald-400" />
-              <span>بوابة المسوق</span>
+              <span>{t('adminTabs.affiliatePortalBtn')}</span>
             </Link>
           </div>
         </div>
       </section>
 
       {/* Tabs Navigation Bar */}
-      <section className="bg-white border-b border-border sticky top-16 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="bg-white border-b border-border sticky top-14 z-30">
+        <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
           <div className="flex items-center gap-1.5 overflow-x-auto py-2.5 hide-scrollbar">
             {[
-              { id: 'dashboard', label: 'لوحة القيادة', icon: LayoutDashboard },
-              { id: 'orders', label: 'الطلبات والشحن', icon: ShoppingCart, badge: pendingOrdersCount, badgeColor: 'bg-amber-600' },
-              { id: 'products', label: 'إدارة المنتجات', icon: Package, badge: products.length },
+              { id: 'dashboard', label: t('adminTabs.dashboard'), icon: LayoutDashboard },
+              { id: 'orders', label: t('adminTabs.orders'), icon: ShoppingCart, badge: pendingOrdersCount, badgeColor: 'bg-amber-600' },
+              { id: 'products', label: t('adminTabs.products'), icon: Package, badge: products.length },
               {
                 id: 'marketers',
-                label: 'المسوقون',
+                label: t('adminTabs.marketers'),
                 icon: Users,
                 badge: pendingMarketersCount > 0 ? pendingMarketersCount : marketers.length,
                 badgeColor: pendingMarketersCount > 0 ? 'bg-amber-600' : undefined,
               },
-              { id: 'withdrawals', label: 'طلبات السحب', icon: Wallet, badge: pendingWithdrawalsCount, badgeColor: 'bg-rose-600' },
-              { id: 'shipping', label: 'تعريفات الشحن', icon: Truck },
-              { id: 'settings', label: 'إعدادات المنصة', icon: Settings },
+              { id: 'withdrawals', label: t('adminTabs.withdrawals'), icon: Wallet, badge: pendingWithdrawalsCount, badgeColor: 'bg-rose-600' },
+              { id: 'shipping', label: t('adminTabs.shipping'), icon: Truck },
+              { id: 'settings', label: t('adminTabs.settings'), icon: Settings },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -185,7 +194,7 @@ export default function AdminPage() {
       </section>
 
       {/* Main Admin Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 pt-6">
         {activeTab === 'dashboard' && (
           <AdminDashboard
             orders={orders}

@@ -24,8 +24,9 @@ const STATUS_OPTIONS: { value: OrderStatus; label: string; dot: string }[] = [
   { value: 'processing', label: 'جاري التجهيز بالمخزن', dot: 'bg-indigo-500' },
   { value: 'shipped', label: 'تم التسليم لشركة الشحن', dot: 'bg-purple-500' },
   { value: 'out_for_delivery', label: 'مع المندوب للتسليم', dot: 'bg-cyan-500' },
-  { value: 'delivered', label: 'تم التسليم (إيداع الأرباح)', dot: 'bg-emerald-500' },
-  { value: 'returned', label: 'مرتجع / لم يستلم', dot: 'bg-rose-500' },
+  { value: 'delivered', label: 'تم التسليم (قفل فترة الاسترجاع)', dot: 'bg-emerald-500' },
+  { value: 'partially_returned', label: 'مرتجع جزئي', dot: 'bg-orange-500' },
+  { value: 'returned', label: 'مرتجع كامل / لم يستلم', dot: 'bg-rose-500' },
   { value: 'cancelled', label: 'ملغي', dot: 'bg-neutral-400' },
 ];
 
@@ -39,6 +40,8 @@ export default function AdminOrders({ orders, onRefresh }: AdminOrdersProps) {
   const [shippingCompany, setShippingCompany] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [statusNote, setStatusNote] = useState('');
+  const [returnQuantities, setReturnQuantities] = useState<Record<string, number>>({});
+  const [modalError, setModalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const openOrderModal = (ord: Order) => {
@@ -47,21 +50,32 @@ export default function AdminOrders({ orders, onRefresh }: AdminOrdersProps) {
     setShippingCompany(ord.shippingCompany || 'بوسطة (Bosta)');
     setTrackingNumber(ord.trackingNumber || '');
     setStatusNote(ord.statusNotes || '');
+    setReturnQuantities({});
+    setModalError(null);
   };
 
   const handleSaveStatus = async () => {
     if (!selectedOrder) return;
     setLoading(true);
+    setModalError(null);
     try {
+      const returnedItems =
+        newStatus === 'partially_returned'
+          ? Object.entries(returnQuantities)
+              .filter(([, qty]) => qty > 0)
+              .map(([orderItemId, returnQty]) => ({ orderItemId, returnQty }))
+          : undefined;
+
       await updateOrderStatus(selectedOrder.id, newStatus, {
         shippingCompany: shippingCompany.trim(),
         trackingNumber: trackingNumber.trim(),
         note: statusNote.trim(),
+        returnedItems,
       });
       onRefresh();
       setSelectedOrder(null);
-    } catch (e) {
-      console.error(e);
+    } catch (e: unknown) {
+      setModalError(e instanceof Error ? e.message : 'تعذر تحديث حالة الطلب');
     } finally {
       setLoading(false);
     }
@@ -221,6 +235,12 @@ export default function AdminOrders({ orders, onRefresh }: AdminOrdersProps) {
             </div>
 
             <div className="space-y-4 text-xs font-medium text-neutral-700">
+              {modalError && (
+                <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
+                  {modalError}
+                </div>
+              )}
+
               {/* Status Select */}
               <div>
                 <label className="block mb-1.5">تحديث حالة الطلب:</label>
@@ -237,8 +257,39 @@ export default function AdminOrders({ orders, onRefresh }: AdminOrdersProps) {
                 </select>
                 {newStatus === 'delivered' && (
                   <p className="text-[11px] text-emerald-700 mt-1 font-medium">
-                    سيتم تحويل عمولة المسوق ({selectedOrder.affiliateCommission} ج.م) تلقائياً من الرصيد المعلق إلى الرصيد المتاح للسحب.
+                    سيتم نقل عمولة المسوق ({selectedOrder.affiliateCommission} ج.م) إلى رصيد فترة الاسترجاع المحجوز (lockedBalance) وتحريرها تلقائياً بعد انتهاء مدة الاسترجاع.
                   </p>
+                )}
+                {newStatus === 'partially_returned' && (
+                  <div className="mt-2 p-3 rounded-lg bg-orange-50/70 border border-orange-200 space-y-2">
+                    <p className="text-[11px] font-bold text-orange-900">
+                      حدد الكمية المرتجعة لكل قطعة (سيتم استرجاع المخزون وخصم العمولة التناسبية تلقائياً):
+                    </p>
+                    {selectedOrder.items.map((item) => {
+                      const remaining = item.quantity - (item.returnedQuantity || 0);
+                      const key = item.id || item.productId;
+                      return (
+                        <div key={key} className="flex items-center justify-between gap-2 text-[11px]">
+                          <span className="truncate text-ink">
+                            {item.name} ({item.size}) — متبقي: {remaining}
+                          </span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={remaining}
+                            value={returnQuantities[key] ?? 0}
+                            onChange={(e) =>
+                              setReturnQuantities((prev) => ({
+                                ...prev,
+                                [key]: Math.max(0, Math.min(remaining, Number(e.target.value) || 0)),
+                              }))
+                            }
+                            className="w-16 px-2 py-1 rounded border border-orange-300 bg-white font-mono text-center"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
 

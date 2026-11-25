@@ -1,0 +1,385 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────
+
+enum UserRole {
+  CUSTOMER
+  MARKETER
+  ADMIN
+}
+
+enum AffiliateStatus {
+  UNVERIFIED
+  PENDING
+  ACTIVE
+  REJECTED
+  SUSPENDED
+}
+
+enum VerificationChannel {
+  EMAIL
+  WHATSAPP_OTP
+}
+
+enum PayoutMethod {
+  VODAFONE_CASH
+  INSTAPAY
+  BANK_TRANSFER
+}
+
+enum OrderSource {
+  STOREFRONT
+  AFFILIATE_DIRECT
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  RETURNED
+  PARTIALLY_RETURNED
+}
+
+enum CommissionState {
+  NONE
+  PENDING
+  LOCKED_RETURN_WINDOW
+  AVAILABLE
+  CLAWED_BACK
+  VOIDED
+}
+
+enum WalletLedgerType {
+  COMMISSION_PENDING
+  COMMISSION_LOCKED
+  COMMISSION_RELEASED
+  COMMISSION_CLAWBACK
+  COMMISSION_VOIDED
+  WITHDRAWAL_HOLD
+  WITHDRAWAL_PAID
+  WITHDRAWAL_REFUND
+  ADJUSTMENT
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SyncStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+}
+
+// ─── Core Identity & Affiliate Tables ─────────────────────────
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  googleSub       String?   @unique @map("google_sub")
+  name            String
+  avatarUrl       String?   @map("avatar_url")
+  role            UserRole  @default(CUSTOMER)
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  phoneVerifiedAt DateTime? @map("phone_verified_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  affiliate          Affiliate?
+  verificationTokens VerificationToken[]
+
+  @@map("users")
+}
+
+model Affiliate {
+  id                    String          @id @default(cuid())
+  userId                String          @unique @map("user_id")
+  phone                 String          @unique
+  whatsapp              String
+  nationalId            String          @unique @map("national_id")
+  city                  String
+  marketingChannels     String[]        @default([]) @map("marketing_channels")
+  channelLinks          String?         @map("channel_links")
+  experienceLevel       String?         @map("experience_level")
+  expectedMonthlyOrders String?         @map("expected_monthly_orders")
+  affiliateCode         String          @unique @map("affiliate_code")
+  status                AffiliateStatus @default(UNVERIFIED)
+  walletBalance         Decimal         @default(0) @map("wallet_balance") @db.Decimal(12, 2)
+  pendingBalance        Decimal         @default(0) @map("pending_balance") @db.Decimal(12, 2)
+  lockedBalance         Decimal         @default(0) @map("locked_balance") @db.Decimal(12, 2)
+  totalEarned           Decimal         @default(0) @map("total_earned") @db.Decimal(12, 2)
+  totalWithdrawn        Decimal         @default(0) @map("total_withdrawn") @db.Decimal(12, 2)
+  payoutMethod          PayoutMethod    @default(VODAFONE_CASH) @map("payout_method")
+  payoutAccount         String          @map("payout_account")
+  payoutHolderName      String?         @map("payout_holder_name")
+  payoutBankName        String?         @map("payout_bank_name")
+  reviewedBy            String?         @map("reviewed_by")
+  reviewedAt            DateTime?       @map("reviewed_at") @db.Timestamptz(6)
+  rejectionReason       String?         @map("rejection_reason")
+  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user           User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  clicks         AffiliateClick[]
+  orders         Order[]
+  ledgerEntries  WalletLedger[]
+  payoutRequests PayoutRequest[]
+
+  @@index([status, createdAt(sort: Desc)])
+  @@map("affiliates")
+}
+
+model VerificationToken {
+  id         String              @id @default(cuid())
+  userId     String              @map("user_id")
+  channel    VerificationChannel
+  target     String
+  tokenHash  String              @unique @map("token_hash")
+  expiresAt  DateTime            @map("expires_at") @db.Timestamptz(6)
+  consumedAt DateTime?           @map("consumed_at") @db.Timestamptz(6)
+  attempts   Int                 @default(0)
+  createdAt  DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, channel, createdAt(sort: Desc)])
+  @@map("verification_tokens")
+}
+
+// ─── Catalog & Inventory Tables ───────────────────────────────
+
+model Product {
+  id                String    @id @default(cuid())
+  slug              String    @unique
+  nameAr            String    @map("name_ar")
+  nameEn            String    @map("name_en")
+  descriptionAr     String    @map("description_ar")
+  descriptionEn     String    @map("description_en")
+  brand             String    @default("Ctrl YZ")
+  category          String
+  images            String[]  @default([])
+  costPrice         Decimal   @map("cost_price") @db.Decimal(12, 2)
+  wholesalePrice    Decimal   @map("wholesale_price") @db.Decimal(12, 2)
+  minPrice          Decimal   @map("min_price") @db.Decimal(12, 2)
+  suggestedPrice    Decimal   @map("suggested_price") @db.Decimal(12, 2)
+  salePrice         Decimal?  @map("sale_price") @db.Decimal(12, 2)
+  marketingDriveUrl String?   @map("marketing_drive_url")
+  adCopies          Json?     @map("ad_copies")
+  isFeatured        Boolean   @default(false) @map("is_featured")
+  isActive          Boolean   @default(true) @map("is_active")
+  archivedAt        DateTime? @map("archived_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  variants   ProductVariant[]
+  orderItems OrderItem[]
+
+  @@index([isActive, archivedAt, category])
+  @@index([createdAt(sort: Desc)])
+  @@map("products")
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String  @map("product_id")
+  sku       String  @unique
+  size      String
+  color     String
+  colorHex  String? @map("color_hex")
+  stock     Int     @default(0)
+  isActive  Boolean @default(true) @map("is_active")
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  orderItems OrderItem[]
+
+  @@unique([productId, size, color])
+  @@index([productId, isActive])
+  @@map("product_variants")
+}
+
+// ─── Affiliate Attribution & Order Lifecycle Tables ───────────
+
+model AffiliateClick {
+  id            String   @id @default(cuid())
+  affiliateId   String   @map("affiliate_id")
+  ipHash        String   @map("ip_hash")
+  userAgentHash String   @map("user_agent_hash")
+  landingUrl    String   @map("landing_url")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+
+  @@index([affiliateId, createdAt(sort: Desc)])
+  @@index([affiliateId, ipHash, createdAt])
+  @@map("affiliate_clicks")
+}
+
+model Order {
+  id                 String          @id @default(cuid())
+  orderNumber        String          @unique @map("order_number")
+  affiliateId        String?         @map("affiliate_id")
+  source             OrderSource     @default(STOREFRONT)
+  status             OrderStatus     @default(PENDING)
+  commissionState    CommissionState @default(NONE) @map("commission_state")
+  customerName       String          @map("customer_name")
+  customerPhone      String          @map("customer_phone")
+  customerAltPhone   String?         @map("customer_alt_phone")
+  governorate        String
+  customerCity       String?         @map("customer_city")
+  customerAddress    String          @map("customer_address")
+  notes              String?
+  subtotal           Decimal         @db.Decimal(12, 2)
+  shippingFee        Decimal         @map("shipping_fee") @db.Decimal(12, 2)
+  totalAmount        Decimal         @map("total_amount") @db.Decimal(12, 2)
+  totalWholesale     Decimal         @map("total_wholesale") @db.Decimal(12, 2)
+  totalCommission    Decimal         @map("total_commission") @db.Decimal(12, 2)
+  platformProfit     Decimal         @map("platform_profit") @db.Decimal(12, 2)
+  shippingCompany    String?         @map("shipping_company")
+  trackingNumber     String?         @map("tracking_number")
+  statusNotes        String?         @map("status_notes")
+  statusHistory      Json?           @map("status_history")
+  idempotencyKey     String?         @unique @map("idempotency_key")
+  deliveredAt        DateTime?       @map("delivered_at") @db.Timestamptz(6)
+  returnWindowEndsAt DateTime?       @map("return_window_ends_at") @db.Timestamptz(6)
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  affiliate     Affiliate?     @relation(fields: [affiliateId], references: [id], onDelete: Restrict)
+  items         OrderItem[]
+  ledgerEntries WalletLedger[]
+
+  @@index([affiliateId, status, createdAt(sort: Desc)])
+  @@index([trackingNumber])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([commissionState, returnWindowEndsAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id               String  @id @default(cuid())
+  orderId          String  @map("order_id")
+  productId        String  @map("product_id")
+  variantId        String? @map("variant_id")
+  productName      String  @map("product_name")
+  size             String
+  color            String
+  quantity         Int
+  returnedQuantity Int     @default(0) @map("returned_quantity")
+  unitPrice        Decimal @map("unit_price") @db.Decimal(12, 2)
+  wholesalePrice   Decimal @map("wholesale_price") @db.Decimal(12, 2)
+  costPrice        Decimal @map("cost_price") @db.Decimal(12, 2)
+  commissionAmount Decimal @map("commission_amount") @db.Decimal(12, 2)
+
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([variantId])
+  @@map("order_items")
+}
+
+// ─── Immutable Financial Ledger & Payouts ─────────────────────
+
+model WalletLedger {
+  id              String           @id @default(cuid())
+  affiliateId     String           @map("affiliate_id")
+  orderId         String?          @map("order_id")
+  payoutRequestId String?          @map("payout_request_id")
+  type            WalletLedgerType
+  amount          Decimal          @db.Decimal(12, 2)
+  balanceAfter    Decimal          @map("balance_after") @db.Decimal(12, 2)
+  idempotencyKey  String           @unique @map("idempotency_key")
+  note            String?
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  affiliate     Affiliate      @relation(fields: [affiliateId], references: [id], onDelete: Restrict)
+  order         Order?         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  payoutRequest PayoutRequest? @relation(fields: [payoutRequestId], references: [id], onDelete: Restrict)
+
+  @@index([affiliateId, createdAt(sort: Desc)])
+  @@index([orderId])
+  @@index([payoutRequestId])
+  @@map("wallet_ledger")
+}
+
+model PayoutRequest {
+  id              String       @id @default(cuid())
+  requestCode     String       @unique @map("request_code")
+  affiliateId     String       @map("affiliate_id")
+  amount          Decimal      @db.Decimal(12, 2)
+  method          PayoutMethod
+  accountDetails  String       @map("account_details")
+  status          PayoutStatus @default(PENDING)
+  receiptRef      String?      @map("receipt_ref")
+  rejectionReason String?      @map("rejection_reason")
+  processedBy     String?      @map("processed_by")
+  processedAt     DateTime?    @map("processed_at") @db.Timestamptz(6)
+  idempotencyKey  String?      @unique @map("idempotency_key")
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  affiliate     Affiliate      @relation(fields: [affiliateId], references: [id], onDelete: Restrict)
+  ledgerEntries WalletLedger[]
+
+  @@index([affiliateId, status, createdAt(sort: Desc)])
+  @@map("payout_requests")
+}
+
+// ─── Platform Configuration & Sync Observability ──────────────
+
+model PlatformSettings {
+  id                  Int      @id @default(1)
+  storeName           String   @map("store_name")
+  currency            String   @default("EGP")
+  contactWhatsApp     String   @map("contact_whatsapp")
+  announcementAr      String   @map("announcement_ar")
+  announcementEn      String   @map("announcement_en")
+  minWithdrawalAmount Decimal  @default(200) @map("min_withdrawal_amount") @db.Decimal(12, 2)
+  returnWindowDays    Int      @default(7) @map("return_window_days")
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("platform_settings")
+}
+
+model ShippingRate {
+  id            String   @id @default(cuid())
+  governorateAr String   @unique @map("governorate_ar")
+  governorateEn String   @map("governorate_en")
+  fee           Decimal  @db.Decimal(12, 2)
+  estimatedDays String   @map("estimated_days")
+  isActive      Boolean  @default(true) @map("is_active")
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("shipping_rates")
+}
+
+model SyncLog {
+  id             String     @id @default(cuid())
+  source         String
+  eventType      String     @map("event_type")
+  idempotencyKey String     @unique @map("idempotency_key")
+  status         SyncStatus @default(RECEIVED)
+  payload        Json
+  errorMessage   String?    @map("error_message")
+  retryCount     Int        @default(0) @map("retry_count")
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([source, status, createdAt(sort: Desc)])
+  @@map("sync_logs")
+}

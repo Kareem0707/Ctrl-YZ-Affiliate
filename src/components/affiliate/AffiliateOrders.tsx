@@ -24,6 +24,7 @@ const STATUS_MAP: Record<OrderStatus, { label_ar: string; label_en: string; dot:
   shipped: { label_ar: 'مع شركة الشحن', label_en: 'Shipped', dot: 'bg-purple-500', textColor: 'text-purple-800' },
   out_for_delivery: { label_ar: 'مع المندوب للتسليم', label_en: 'Out for Delivery', dot: 'bg-cyan-500', textColor: 'text-cyan-800' },
   delivered: { label_ar: 'تم التسليم', label_en: 'Delivered', dot: 'bg-emerald-500', textColor: 'text-emerald-800' },
+  partially_returned: { label_ar: 'مرتجع جزئي', label_en: 'Partially Returned', dot: 'bg-orange-500', textColor: 'text-orange-800' },
   returned: { label_ar: 'مرتجع', label_en: 'Returned', dot: 'bg-rose-500', textColor: 'text-rose-800' },
   cancelled: { label_ar: 'ملغي', label_en: 'Cancelled', dot: 'bg-neutral-400', textColor: 'text-neutral-600' },
 };
@@ -35,7 +36,13 @@ export default function AffiliateOrders({ orders }: AffiliateOrdersProps) {
 
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
-      const matchesStatus = selectedStatus === 'all' || o.status === selectedStatus;
+      let matchesStatus = selectedStatus === 'all' || o.status === selectedStatus;
+      if (selectedStatus === 'shipped') {
+        matchesStatus = o.status === 'shipped' || o.status === 'out_for_delivery';
+      } else if (selectedStatus === 'returned') {
+        matchesStatus = o.status === 'returned' || o.status === 'partially_returned';
+      }
+
       const matchesSearch =
         !search.trim() ||
         o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
@@ -52,9 +59,11 @@ export default function AffiliateOrders({ orders }: AffiliateOrdersProps) {
       all: orders.length,
       pending: orders.filter((o) => o.status === 'pending').length,
       confirmed: orders.filter((o) => o.status === 'confirmed').length,
+      processing: orders.filter((o) => o.status === 'processing').length,
       shipped: orders.filter((o) => o.status === 'shipped' || o.status === 'out_for_delivery').length,
       delivered: orders.filter((o) => o.status === 'delivered').length,
-      returned: orders.filter((o) => o.status === 'returned').length,
+      returned: orders.filter((o) => o.status === 'returned' || o.status === 'partially_returned').length,
+      cancelled: orders.filter((o) => o.status === 'cancelled').length,
     };
   }, [orders]);
 
@@ -74,15 +83,17 @@ export default function AffiliateOrders({ orders }: AffiliateOrdersProps) {
           />
         </div>
 
-        {/* Status Filter Tabs */}
+        {/* Status Filter Tabs (Exact match with counts) */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
           {[
             { id: 'all', label: 'الكل', count: counts.all },
             { id: 'pending', label: 'قيد المراجعة', count: counts.pending },
             { id: 'confirmed', label: 'مؤكد هاتفياً', count: counts.confirmed },
-            { id: 'shipped', label: 'جاري الشحن', count: counts.shipped },
+            { id: 'processing', label: 'جاري التجهيز', count: counts.processing },
+            { id: 'shipped', label: 'جاري الشحن / مع المندوب', count: counts.shipped },
             { id: 'delivered', label: 'تم التسليم والأرباح', count: counts.delivered },
             { id: 'returned', label: 'مرتجع', count: counts.returned },
+            { id: 'cancelled', label: 'ملغي', count: counts.cancelled },
           ].map((tab) => (
             <button
               key={tab.id}

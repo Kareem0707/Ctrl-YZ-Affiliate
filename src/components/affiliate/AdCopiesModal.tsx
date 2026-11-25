@@ -10,9 +10,35 @@ interface AdCopiesModalProps {
   onClose: () => void;
 }
 
+function isValidMarketingDriveUrl(url?: string | null): url is string {
+  if (!url) return false;
+  const trimmed = url.trim();
+  if (!trimmed.startsWith('https://')) return false;
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.includes('example.com') ||
+    lower.includes('placeholder') ||
+    lower.includes('your-folder') ||
+    lower.includes('ctrl-yz-demo') ||
+    lower.includes('folders/demo') ||
+    lower.endsWith('/folders/')
+  ) {
+    return false;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === 'https:' && parsed.hostname.includes('.');
+  } catch {
+    return false;
+  }
+}
+
 export default function AdCopiesModal({ product, onClose }: AdCopiesModalProps) {
   const { locale } = useLanguage();
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const validDriveUrl = isValidMarketingDriveUrl(product.marketingDriveUrl)
+    ? product.marketingDriveUrl
+    : null;
 
   const handleCopy = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
@@ -53,8 +79,8 @@ export default function AdCopiesModal({ product, onClose }: AdCopiesModalProps) 
           </div>
         </div>
 
-        {/* Media Drive Assets */}
-        {product.marketingDriveUrl && (
+        {/* Media Drive Assets (Hidden when empty or fake placeholder URL) */}
+        {validDriveUrl && (
           <div className="mb-5 p-3.5 rounded-lg bg-neutral-50 border border-border flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-ink">
@@ -65,7 +91,7 @@ export default function AdCopiesModal({ product, onClose }: AdCopiesModalProps) 
               </p>
             </div>
             <a
-              href={product.marketingDriveUrl}
+              href={validDriveUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="px-3 py-1.5 bg-ink hover:bg-neutral-800 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Package,
   Plus,
@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { deleteProduct, saveProduct } from '@/lib/dataService';
+import { broadcastLocalChange } from '@/lib/realtimeSync';
+import SafeProductImage from '@/components/common/SafeProductImage';
 import ProductFormModal from './ProductFormModal';
 
 interface AdminProductsProps {
@@ -34,11 +36,21 @@ export default function AdminProducts({ products, onRefresh }: AdminProductsProp
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [draftStocks, setDraftStocks] = useState<Record<string, string>>({});
+  const [stockError, setStockError] = useState<string | null>(null);
+  const debounceTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  // Sync local products with props
+  // Sync local products with props (without clobbering actively edited drafts)
   useEffect(() => {
     setLocalProducts(products);
   }, [products]);
+
+  useEffect(() => {
+    const timers = debounceTimersRef.current;
+    return () => {
+      Object.values(timers).forEach((t) => clearTimeout(t));
+    };
+  }, []);
 
   // Inventory KPI calculations
   const totalStockUnits = useMemo(() => {
@@ -93,26 +105,92 @@ export default function AdminProducts({ products, onRefresh }: AdminProductsProp
     });
   }, [localProducts, selectedCat, search, stockFilter]);
 
-  // Optimistic stock update
-  const handleStockChange = async (productId: string, newStock: number) => {
+  // Atomic stock commit via dedicated PATCH /api/products/[id]/stock (never per keystroke)
+  const commitStockChange = async (productId: string, newStock: number) => {
     const sanitizedStock = Math.max(0, Math.floor(newStock));
+    if (debounceTimersRef.current[productId]) {
+      clearTimeout(debounceTimersRef.current[productId]);
+      delete debounceTimersRef.current[productId];
+    }
 
-    // 1. Optimistic local state update
+    const previousProduct = localProducts.find((p) => p.id === productId);
+    setStockError(null);
     setLocalProducts((prev) =>
       prev.map((p) => (p.id === productId ? { ...p, stock: sanitizedStock } : p))
     );
+    setDraftStocks((prev) => {
+      const next = { ...prev };
+      delete next[productId];
+      return next;
+    });
     setUpdatingId(productId);
 
     try {
-      await saveProduct({ id: productId, stock: sanitizedStock });
+      const res = await fetch(`/api/products/${encodeURIComponent(productId)}/stock`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock: sanitizedStock }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body?.error || 'تعذر تحديث المخزون على الخادم');
+      }
+      broadcastLocalChange('product_saved', productId);
       onRefresh();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to update stock:', err);
-      // Revert on error
-      setLocalProducts(products);
+      setStockError(err instanceof Error ? err.message : 'تعذر تحديث المخزون');
+      // Revert optimistically updated row cleanly
+      if (previousProduct) {
+        setLocalProducts((prev) =>
+          prev.map((p) => (p.id === productId ? previousProduct : p))
+        );
+      } else {
+        setLocalProducts(products);
+      }
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  // Debounced input draft handler (500ms after typing stops, or immediately on Blur/Enter)
+  const handleDraftStockInput = (productId: string, rawValue: string) => {
+    setDraftStocks((prev) => ({ ...prev, [productId]: rawValue }));
+
+    if (debounceTimersRef.current[productId]) {
+      clearTimeout(debounceTimersRef.current[productId]);
+    }
+
+    debounceTimersRef.current[productId] = setTimeout(() => {
+      const parsed = parseInt(rawValue, 10);
+      if (!Number.isNaN(parsed) && parsed >= 0) {
+        void commitStockChange(productId, parsed);
+      }
+    }, 500);
+  };
+
+  const handleDraftStockCommit = (productId: string, fallbackStock: number) => {
+    const raw = draftStocks[productId];
+    if (raw === undefined) return;
+    const parsed = parseInt(raw, 10);
+    if (Number.isNaN(parsed) || parsed < 0) {
+      setDraftStocks((prev) => {
+        const next = { ...prev };
+        delete next[productId];
+        return next;
+      });
+      return;
+    }
+    if (parsed === fallbackStock) {
+      setDraftStocks((prev) => {
+        const next = { ...prev };
+        delete next[productId];
+        return next;
+      });
+      return;
+    }
+    void commitStockChange(productId, parsed);
   };
 
   // Optimistic status toggle
@@ -145,6 +223,22 @@ export default function AdminProducts({ products, onRefresh }: AdminProductsProp
 
   return (
     <div className="space-y-6">
+      {stockError && (
+        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={15} className="flex-shrink-0" />
+            <span>{stockError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStockError(null)}
+            className="text-rose-500 hover:text-rose-800 text-xs font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* ─── 1. INVENTORY SUMMARY KPIS ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Stock Units */}
@@ -347,11 +441,15 @@ export default function AdminProducts({ products, onRefresh }: AdminProductsProp
                       {/* Product Thumbnail & Name */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={prod.images[0] || '/products/06f6580b-e809-4fb1-a16b-b668d10ab5a8.jfif'}
-                            alt={prod.name_ar}
-                            className="w-12 h-14 rounded-lg object-contain bg-zinc-950 border border-border flex-shrink-0"
-                          />
+                          <div className="w-12 h-14 rounded-lg bg-zinc-950 border border-border overflow-hidden flex-shrink-0">
+                            <SafeProductImage
+                              src={prod.images[0] || '/products/06f6580b-e809-4fb1-a16b-b668d10ab5a8.jfif'}
+                              alt={prod.name_ar}
+                              sizes="48px"
+                              className="object-contain"
+                              iconSize={16}
+                            />
+                          </div>
                           <div>
                             <div className="font-bold text-ink line-clamp-1 text-xs">
                               {prod.name_ar}
@@ -408,12 +506,14 @@ export default function AdminProducts({ products, onRefresh }: AdminProductsProp
                             )}
                           </div>
 
-                          {/* Editable Number Input & Fast Buttons */}
+                          {/* Editable Number Input & Fast Buttons (Debounced / Blur / Enter — never per keystroke) */}
                           <div className="flex items-center gap-1">
                             {/* Fast -10 */}
                             <button
-                              onClick={() => handleStockChange(prod.id, prod.stock - 10)}
-                              className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[10px] font-bold flex items-center justify-center transition active:scale-95"
+                              type="button"
+                              disabled={updatingId === prod.id}
+                              onClick={() => commitStockChange(prod.id, Math.max(0, prod.stock - 10))}
+                              className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 disabled:opacity-40 text-neutral-700 text-[10px] font-bold flex items-center justify-center transition active:scale-95"
                               title="خصم 10 قطع"
                             >
                               -10
@@ -421,21 +521,27 @@ export default function AdminProducts({ products, onRefresh }: AdminProductsProp
 
                             {/* Fast -1 */}
                             <button
-                              onClick={() => handleStockChange(prod.id, prod.stock - 1)}
-                              className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-bold flex items-center justify-center transition active:scale-95"
+                              type="button"
+                              disabled={updatingId === prod.id}
+                              onClick={() => commitStockChange(prod.id, Math.max(0, prod.stock - 1))}
+                              className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 disabled:opacity-40 text-neutral-700 text-xs font-bold flex items-center justify-center transition active:scale-95"
                               title="خصم قطعة واحدة"
                             >
                               -
                             </button>
 
-                            {/* Direct Editable Stock Input */}
+                            {/* Direct Editable Stock Input (Local draft state) */}
                             <input
                               type="number"
                               min="0"
-                              value={prod.stock}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value, 10);
-                                handleStockChange(prod.id, isNaN(val) ? 0 : val);
+                              value={draftStocks[prod.id] ?? String(prod.stock)}
+                              onChange={(e) => handleDraftStockInput(prod.id, e.target.value)}
+                              onBlur={() => handleDraftStockCommit(prod.id, prod.stock)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.currentTarget.blur();
+                                  handleDraftStockCommit(prod.id, prod.stock);
+                                }
                               }}
                               className={`w-16 px-1.5 py-1 text-center rounded border font-mono font-bold text-xs num-tabular focus:outline-none focus:ring-2 focus:ring-brand ${
                                 isOutOfStock
@@ -444,13 +550,15 @@ export default function AdminProducts({ products, onRefresh }: AdminProductsProp
                                   ? 'border-amber-400 bg-amber-50/50 text-amber-800'
                                   : 'border-border bg-white text-ink'
                               }`}
-                              title="انقر لتعديل عدد القطع بالمخزون مباشرة"
+                              title="انقر لتعديل العدد ثم اضغط Enter أو اخرج من الحقل للحفظ"
                             />
 
                             {/* Fast +1 */}
                             <button
-                              onClick={() => handleStockChange(prod.id, prod.stock + 1)}
-                              className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-bold flex items-center justify-center transition active:scale-95"
+                              type="button"
+                              disabled={updatingId === prod.id}
+                              onClick={() => commitStockChange(prod.id, prod.stock + 1)}
+                              className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 disabled:opacity-40 text-neutral-700 text-xs font-bold flex items-center justify-center transition active:scale-95"
                               title="إضافة قطعة واحدة"
                             >
                               +
@@ -458,8 +566,10 @@ export default function AdminProducts({ products, onRefresh }: AdminProductsProp
 
                             {/* Fast +10 */}
                             <button
-                              onClick={() => handleStockChange(prod.id, prod.stock + 10)}
-                              className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[10px] font-bold flex items-center justify-center transition active:scale-95"
+                              type="button"
+                              disabled={updatingId === prod.id}
+                              onClick={() => commitStockChange(prod.id, prod.stock + 10)}
+                              className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 disabled:opacity-40 text-neutral-700 text-[10px] font-bold flex items-center justify-center transition active:scale-95"
                               title="توريد +10 قطع"
                             >
                               +10
@@ -467,12 +577,18 @@ export default function AdminProducts({ products, onRefresh }: AdminProductsProp
 
                             {/* Zero Out Button */}
                             <button
-                              onClick={() => handleStockChange(prod.id, 0)}
-                              className="px-1.5 py-1 rounded bg-neutral-100 hover:bg-rose-100 text-neutral-500 hover:text-rose-700 text-[10px] font-bold transition"
+                              type="button"
+                              disabled={updatingId === prod.id}
+                              onClick={() => commitStockChange(prod.id, 0)}
+                              className="px-1.5 py-1 rounded bg-neutral-100 hover:bg-rose-100 disabled:opacity-40 text-neutral-500 hover:text-rose-700 text-[10px] font-bold transition"
                               title="تصفير المخزون (0)"
                             >
                               تصفير
                             </button>
+
+                            {updatingId === prod.id && (
+                              <RefreshCw size={12} className="animate-spin text-brand mr-1" />
+                            )}
                           </div>
                         </div>
                       </td>

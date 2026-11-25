@@ -1,9 +1,11 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft, Minus, Plus, ShoppingBag } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { useCart, type CartItem } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import SafeProductImage from '@/components/common/SafeProductImage';
 
 interface CartScreenProps {
   onBack: () => void;
@@ -13,19 +15,26 @@ interface CartScreenProps {
 export default function CartScreen({ onBack, onNext }: CartScreenProps) {
   const { cart, updateQuantity, removeFromCart, cartTotal, cartCount } = useCart();
   const { t, locale } = useLanguage();
+  const { currencySymbol } = useSettings();
 
-  const getName = (item: any) => (locale === 'ar' ? item.name_ar : item.name_en);
+  const getName = (item: CartItem) =>
+    locale === 'ar' ? item.name_ar || item.name : item.name_en || item.name;
 
   if (cart.length === 0) {
     return (
       <div className="min-h-screen flex flex-col bg-canvas">
         {/* Header */}
-        <div className="px-5 pt-12 pb-4">
+        <div className="px-5 pt-8 pb-4">
           <button
             onClick={onBack}
+            aria-label={locale === 'ar' ? 'رجوع' : 'Back'}
             className="w-9 h-9 rounded-lg bg-white border border-border flex items-center justify-center hover:bg-neutral-50 transition-colors"
           >
-            <ArrowLeft size={18} strokeWidth={1.6} className="text-neutral-700" />
+            <ArrowLeft
+              size={18}
+              strokeWidth={1.6}
+              className={`text-neutral-700 ${locale === 'ar' ? 'rotate-180' : ''}`}
+            />
           </button>
         </div>
 
@@ -55,9 +64,14 @@ export default function CartScreen({ onBack, onNext }: CartScreenProps) {
         <div className="px-5 pt-8 pb-2">
           <button
             onClick={onBack}
+            aria-label={locale === 'ar' ? 'رجوع' : 'Back'}
             className="w-9 h-9 rounded-lg bg-white border border-border flex items-center justify-center hover:bg-neutral-50 transition-colors"
           >
-            <ArrowLeft size={18} strokeWidth={1.6} className="text-neutral-700" />
+            <ArrowLeft
+              size={18}
+              strokeWidth={1.6}
+              className={`text-neutral-700 ${locale === 'ar' ? 'rotate-180' : ''}`}
+            />
           </button>
         </div>
 
@@ -71,77 +85,114 @@ export default function CartScreen({ onBack, onNext }: CartScreenProps) {
 
         {/* Cart items */}
         <div className="px-5 space-y-3">
-        {cart.map((item: any) => (
-          <div
-            key={item.cartId || `${item.id}-${item.selectedSize}`}
-            className="flex items-center gap-3.5 bg-white rounded-xl p-3 border border-border hover:border-neutral-300 transition-colors"
-          >
-            {/* Thumbnail */}
-            <div className="w-16 h-20 rounded-lg bg-zinc-950 border border-border flex items-center justify-center flex-shrink-0 overflow-hidden">
-              {item.images?.[0] ? (
-                <img
-                  src={item.images[0]}
-                  alt={getName(item)}
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <ShoppingBag size={24} strokeWidth={1.4} className="text-neutral-300" />
-              )}
-            </div>
+          {cart.map((item) => {
+            const atMaxStock = item.quantity >= item.maxStock;
+            return (
+              <div
+                key={item.id}
+                className="flex items-center gap-3.5 bg-white rounded-xl p-3 border border-border hover:border-neutral-300 transition-colors"
+              >
+                {/* Thumbnail */}
+                <div className="w-16 h-20 rounded-lg bg-zinc-950 border border-border flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <SafeProductImage
+                    src={item.image}
+                    alt={getName(item)}
+                    sizes="64px"
+                    className="object-contain"
+                    iconSize={20}
+                  />
+                </div>
 
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-neutral-400 uppercase tracking-wide">
-                {item.brand} · {t('product.size')} {item.selectedSize}
-              </p>
-              <p className="text-xs font-bold text-ink truncate mt-0.5">
-                {getName(item)}
-              </p>
-              <p className="text-xs font-bold text-ink font-mono mt-1 num-tabular">
-                {item.salePrice && item.salePrice < item.price ? item.salePrice : item.price}{' '}
-                <span className="font-sans font-normal text-neutral-500">{t('common.egp')}</span>
-              </p>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-neutral-500 uppercase tracking-wide flex flex-wrap items-center gap-1.5">
+                        <span className="font-semibold text-neutral-700">{item.brand}</span>
+                        <span>·</span>
+                        <span>
+                          {t('product.size')}: <strong className="text-ink">{item.size}</strong>
+                        </span>
+                        {item.color && (
+                          <>
+                            <span>·</span>
+                            <span>
+                              {locale === 'ar' ? 'اللون:' : 'Color:'}{' '}
+                              <strong className="text-ink">{item.color}</strong>
+                            </span>
+                          </>
+                        )}
+                      </p>
+                      <p className="text-xs font-bold text-ink truncate mt-0.5">{getName(item)}</p>
+                    </div>
 
-              {/* Quantity controls */}
-              <div className="flex items-center gap-2 mt-2">
-                <button
-                  onClick={() => {
-                    const cartId = item.cartId || `${item.id}-${item.selectedSize}`;
-                    if (item.quantity <= 1) {
-                      removeFromCart(cartId);
-                    } else {
-                      updateQuantity(cartId, item.quantity - 1);
-                    }
-                  }}
-                  className="w-6 h-6 rounded bg-neutral-100 flex items-center justify-center hover:bg-neutral-200 transition-colors text-neutral-600"
-                >
-                  <Minus size={12} strokeWidth={1.6} />
-                </button>
-                <span className="text-xs font-bold text-ink w-4 text-center font-mono num-tabular">
-                  {item.quantity}
-                </span>
-                <button
-                  onClick={() => {
-                    const cartId = item.cartId || `${item.id}-${item.selectedSize}`;
-                    updateQuantity(cartId, item.quantity + 1);
-                  }}
-                  className="w-6 h-6 rounded bg-neutral-100 flex items-center justify-center hover:bg-neutral-200 transition-colors text-neutral-600"
-                >
-                  <Plus size={12} strokeWidth={1.6} />
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => removeFromCart(item.id)}
+                      aria-label={locale === 'ar' ? 'حذف العنصر' : 'Remove item'}
+                      className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition-colors flex-shrink-0"
+                    >
+                      <Trash2 size={14} strokeWidth={1.6} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs font-bold text-ink font-mono num-tabular">
+                      {(item.price * item.quantity).toFixed(2)}{' '}
+                      <span className="font-sans font-normal text-neutral-500">{currencySymbol}</span>
+                    </p>
+
+                    {/* Quantity controls clamped to [1, item.maxStock] */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (item.quantity <= 1) {
+                            removeFromCart(item.id);
+                          } else {
+                            updateQuantity(item.id, item.quantity - 1);
+                          }
+                        }}
+                        aria-label={locale === 'ar' ? 'تقليل الكمية' : 'Decrease quantity'}
+                        className="w-7 h-7 rounded-md bg-neutral-100 flex items-center justify-center hover:bg-neutral-200 transition-colors text-neutral-700"
+                      >
+                        <Minus size={12} strokeWidth={1.8} />
+                      </button>
+                      <span className="text-xs font-bold text-ink w-5 text-center font-mono num-tabular">
+                        {item.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={atMaxStock}
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        aria-label={locale === 'ar' ? 'زيادة الكمية' : 'Increase quantity'}
+                        className="w-7 h-7 rounded-md bg-neutral-100 flex items-center justify-center hover:bg-neutral-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-neutral-700"
+                      >
+                        <Plus size={12} strokeWidth={1.8} />
+                      </button>
+                    </div>
+                  </div>
+                  {atMaxStock && (
+                    <p className="text-[10px] text-amber-700 mt-1">
+                      {locale === 'ar'
+                        ? `الحد الأقصى المتوفر في المخزن: ${item.maxStock}`
+                        : `Max available in stock: ${item.maxStock}`}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* Bottom total + next */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-4xl px-5 pb-6 pt-4 bg-white/95 backdrop-blur-md border-t border-border z-20">
+      {/* Bottom total + next (z-40, BottomNav hidden on cart) */}
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-4xl px-5 pb-6 pt-4 bg-white/95 backdrop-blur-md border-t border-border z-40">
         <div className="flex items-center justify-between mb-3">
           <span className="text-neutral-500 text-xs font-medium">{t('cart.total')}</span>
           <span className="text-lg font-bold font-mono text-ink num-tabular">
-            {cartTotal.toFixed(2)} <span className="text-xs font-sans font-normal">{t('common.egp')}</span>
+            {cartTotal.toFixed(2)}{' '}
+            <span className="text-xs font-sans font-normal">{currencySymbol}</span>
           </span>
         </div>
         <button

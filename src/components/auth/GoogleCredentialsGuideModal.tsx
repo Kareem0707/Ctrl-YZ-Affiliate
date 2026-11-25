@@ -109,14 +109,14 @@ export default function GoogleCredentialsGuideModal({ isOpen, onClose }: GoogleC
                 <span className="font-semibold text-ink block mb-1">Authorized JavaScript origins (العناوين المسموحة):</span>
                 <div className="space-y-1 font-mono text-[10.5px]">
                   <div className="bg-white border border-border px-2.5 py-1 rounded text-neutral-800">http://localhost:3000</div>
-                  <div className="bg-white border border-border px-2.5 py-1 rounded text-neutral-800">https://ctrlyz-affiliate.vercel.app</div>
+                  <div className="bg-white border border-border px-2.5 py-1 rounded text-neutral-800">https://ctrl-yz-affiliate.vercel.app</div>
                 </div>
               </div>
               <div>
                 <span className="font-semibold text-ink block mb-1">Authorized redirect URIs:</span>
                 <div className="space-y-1 font-mono text-[10.5px]">
                   <div className="bg-white border border-border px-2.5 py-1 rounded text-neutral-800">http://localhost:3000</div>
-                  <div className="bg-white border border-border px-2.5 py-1 rounded text-neutral-800">https://ctrlyz-affiliate.vercel.app</div>
+                  <div className="bg-white border border-border px-2.5 py-1 rounded text-neutral-800">https://ctrl-yz-affiliate.vercel.app</div>
                 </div>
               </div>
             </div>
@@ -150,7 +150,7 @@ export default function GoogleCredentialsGuideModal({ isOpen, onClose }: GoogleC
         <div className="pt-2 border-t border-border flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs text-ink-muted">
             <ShieldCheck size={16} className="text-emerald-600" />
-            <span>النظام يدعم الدخول التجريبي الفوري بنقرة واحدة حتى استخراج المعرف</span>
+            <span>يتم التحقق من رموز Google على الخادم حصراً وإصدار جلسات HttpOnly آمنة</span>
           </div>
           <button
             onClick={onClose}

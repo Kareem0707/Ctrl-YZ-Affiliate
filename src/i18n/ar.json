@@ -59,10 +59,14 @@
     "active": "نشط",
     "inactive": "غير نشط",
     "orderStatus": "حالة الطلب",
-    "pending": "قيد الانتظار",
-    "confirmed": "مؤكد",
+    "pending": "قيد المراجعة",
+    "confirmed": "تم التأكيد",
+    "processing": "جاري التجهيز",
     "shipped": "تم الشحن",
+    "out_for_delivery": "مع المندوب للتسليم",
     "delivered": "تم التوصيل",
+    "partially_returned": "مرتجع جزئي",
+    "returned": "مرتجع كامل",
     "cancelled": "ملغي",
     "approve": "موافقة",
     "reject": "رفض",
@@ -95,7 +99,7 @@
     "currency": "العملة",
     "egp": "ج.م"
   },
-  "orderTracking": {
+    "orderTracking": {
     "trackOrder": "تتبع الطلب",
     "orderNumber": "رقم الطلب",
     "enterOrderNumber": "أدخل رقم الطلب",
@@ -103,5 +107,36 @@
     "orderDetails": "تفاصيل الطلب",
     "orderDate": "تاريخ الطلب",
     "orderItems": "عناصر الطلب"
+  },
+  "affiliate": {
+    "portalTitle": "بوابة المسوقين المعتمدة",
+    "welcome": "مرحباً،",
+    "verifiedBadge": "مسوق معتمد",
+    "referralCode": "كود الإحالة",
+    "phone": "الهاتف",
+    "clicks": "النقرات",
+    "conversion": "تحويل",
+    "availableBalance": "المتاح للسحب",
+    "lockedBalance": "محجوز (الاسترجاع)",
+    "pendingBalance": "معلق (بالشحن)",
+    "walletBtn": "المحفظة",
+    "createOrderBtn": "تسجيل طلب لعميل",
+    "tabProducts": "سوق المنتجات",
+    "tabCreateOrder": "تسجيل طلب لعميل",
+    "tabOrders": "طلباتي",
+    "tabWallet": "المحفظة والأرباح",
+    "tabLinks": "متجري وروابط الإحالة"
+  },
+  "adminTabs": {
+    "consoleTitle": "لوحة العمليات المركزية",
+    "consoleSubtitle": "قاعدة بيانات PostgreSQL حية — إدارة الطلبات، المخزون، المسوقين، والسحوبات",
+    "affiliatePortalBtn": "بوابة المسوق",
+    "dashboard": "لوحة القيادة",
+    "orders": "الطلبات والشحن",
+    "products": "إدارة المنتجات",
+    "marketers": "المسوقون",
+    "withdrawals": "طلبات السحب",
+    "shipping": "تعريفات الشحن",
+    "settings": "إعدادات المنصة"
   }
 }

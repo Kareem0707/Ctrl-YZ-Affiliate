@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { X, Save, Plus, Trash2, Upload, Image as ImageIcon, Check, Sparkles, RefreshCw } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { saveProduct } from '@/lib/dataService';
+import SafeProductImage from '@/components/common/SafeProductImage';
 
 interface ProductFormModalProps {
   product?: Product | null;
@@ -11,14 +12,14 @@ interface ProductFormModalProps {
   onSaved: (product: Product) => void;
 }
 
-// Preset store images for quick selection
+// Verified local store images existing in public/products/ (zero 404 entries)
 const PRESET_HOODIE_IMAGES = [
   { label: 'Broken Planet', url: '/products/06f6580b-e809-4fb1-a16b-b668d10ab5a8.jfif' },
-  { label: 'Speed Thrills', url: '/products/89e578c7-43ca-4f51-b883-9c8e10d2a84e.jfif' },
-  { label: 'Lost Soul', url: '/products/808bb39a-cf2a-43cf-ae17-88f1dc852467.jfif' },
+  { label: 'Oversized Edition 2', url: '/products/2c2bf9e7-ac85-4ca5-8f23-c91851b365e3.jfif' },
+  { label: 'Streetwear Drop 3', url: '/products/2f3d209b-4611-44a6-9a8c-67c3dad93e53.jfif' },
   { label: 'Calligraphy', url: '/products/3bdc26c0-9566-444e-bdb5-e697b2a78c52.jfif' },
   { label: 'Sincal Star', url: '/products/3cb61a1d-a9bd-4175-85d6-73de64103cd0.jfif' },
-  { label: 'Cyber Ninja', url: '/products/9440ea29-231a-4ee2-a178-e505296e6a1d.jfif' },
+  { label: 'Winter Graphic 6', url: '/products/4785b824-6501-4579-866a-8f00d0680fdb.jfif' },
 ];
 
 export default function ProductFormModal({
@@ -196,7 +197,13 @@ export default function ProductFormModal({
               {/* Image Preview Box */}
               <div className="w-24 h-32 rounded-xl bg-zinc-950 border border-border overflow-hidden flex items-center justify-center flex-shrink-0 relative group shadow-subtle">
                 {imageUrl ? (
-                  <img src={imageUrl} alt="Preview" className="w-full h-full object-contain" />
+                  <SafeProductImage
+                    src={imageUrl}
+                    alt="Preview"
+                    sizes="96px"
+                    className="object-contain"
+                    iconSize={24}
+                  />
                 ) : (
                   <ImageIcon size={28} className="text-neutral-500" />
                 )}
@@ -257,7 +264,13 @@ export default function ProductFormModal({
                         }`}
                         title={preset.label}
                       >
-                        <img src={preset.url} alt="" className="w-full h-full object-cover" />
+                        <SafeProductImage
+                          src={preset.url}
+                          alt={preset.label}
+                          sizes="32px"
+                          className="object-cover"
+                          iconSize={12}
+                        />
                       </button>
                     ))}
                   </div>

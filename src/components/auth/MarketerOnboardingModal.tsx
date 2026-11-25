@@ -1,25 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
-  User,
-  Phone,
-  Mail,
   CreditCard,
   Building,
   Smartphone,
-  Globe,
-  Share2,
-  TrendingUp,
   ShieldCheck,
-  CheckCircle2,
-  FileText,
   AlertCircle,
-  HelpCircle,
 } from 'lucide-react';
-import { saveMarketer } from '@/lib/dataService';
 import type { Marketer } from '@/lib/types';
+import {
+  EGYPTIAN_NATIONAL_ID_REGEX,
+  EGYPTIAN_PHONE_REGEX,
+} from '@/lib/validators';
 
 interface MarketerOnboardingModalProps {
   isOpen: boolean;
@@ -59,6 +53,8 @@ const EGYPT_GOVERNORATES = [
   'مطروح',
   'البحر الأحمر',
   'الوادي الجديد',
+  'شمال سيناء',
+  'جنوب سيناء',
 ];
 
 const MARKETING_CHANNELS = [
@@ -70,6 +66,18 @@ const MARKETING_CHANNELS = [
   'متجر إلكتروني أو موقع خاص',
   'حالات ومجموعات واتساب',
 ];
+
+function normalizeEgyptPhone(raw: string): string {
+  return raw.trim().replace(/[\s-]/g, '').replace(/^\+?20/, '0');
+}
+
+function isValidEgyptianNationalId(raw: string): boolean {
+  const cleaned = raw.trim();
+  if (!EGYPTIAN_NATIONAL_ID_REGEX.test(cleaned)) return false;
+  const month = Number(cleaned.slice(3, 5));
+  const day = Number(cleaned.slice(5, 7));
+  return month >= 1 && month <= 12 && day >= 1 && day <= 31;
+}
 
 export default function MarketerOnboardingModal({
   isOpen,
@@ -90,16 +98,32 @@ export default function MarketerOnboardingModal({
   const [city, setCity] = useState(EGYPT_GOVERNORATES[0]);
 
   // Marketing Channels & Experience
-  const [selectedChannels, setSelectedChannels] = useState<string[]>(['صفحة فيسبوك (Facebook Page)']);
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([
+    'صفحة فيسبوك (Facebook Page)',
+  ]);
   const [channelLinks, setChannelLinks] = useState('');
-  const [experienceLevel, setExperienceLevel] = useState<'beginner' | 'intermediate' | 'expert'>('intermediate');
+  const [experienceLevel, setExperienceLevel] = useState<
+    'beginner' | 'intermediate' | 'expert'
+  >('intermediate');
   const [expectedMonthlyOrders, setExpectedMonthlyOrders] = useState('20-50');
 
   // Payout Information
-  const [payoutMethod, setPayoutMethod] = useState<'vodafone_cash' | 'instapay' | 'bank_transfer'>('vodafone_cash');
+  const [payoutMethod, setPayoutMethod] = useState<
+    'VODAFONE_CASH' | 'INSTAPAY' | 'BANK_TRANSFER'
+  >('VODAFONE_CASH');
   const [payoutAccount, setPayoutAccount] = useState('');
   const [accountHolderName, setAccountHolderName] = useState('');
   const [bankName, setBankName] = useState('');
+
+  // Fix [P0-12]: Sync prefilled Google profile whenever initialData or modal open state changes
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData?.name) setName(initialData.name);
+      if (initialData?.email) setEmail(initialData.email);
+      setError(null);
+      setStep(1);
+    }
+  }, [isOpen, initialData?.name, initialData?.email]);
 
   if (!isOpen) return null;
 
@@ -112,16 +136,26 @@ export default function MarketerOnboardingModal({
   const handleNextStep = () => {
     setError(null);
     if (step === 1) {
-      if (!name.trim()) {
-        setError('يرجى كتابة الاسم الرباعي بالكامل.');
+      if (!name.trim() || name.trim().length < 6) {
+        setError('يرجى كتابة الاسم الكامل (6 أحرف على الأقل، مطابق للبطاقة).');
         return;
       }
-      if (!phone.trim() || phone.trim().length < 10) {
-        setError('يرجى كتابة رقم هاتف مصري صحيح (01xxxxxxxxx).');
+      const normPhone = normalizeEgyptPhone(phone);
+      if (!EGYPTIAN_PHONE_REGEX.test(normPhone)) {
+        setError(
+          'رقم الهاتف المصري غير صحيح — يجب أن يتكون من 11 رقماً ويبدأ بـ 010 أو 011 أو 012 أو 015.'
+        );
         return;
       }
-      if (nationalId.trim() && nationalId.trim().length !== 14) {
-        setError('الرقم القومي يجب أن يتكون من 14 رقماً صحيحاً.');
+      const normWhatsapp = normalizeEgyptPhone(whatsapp || normPhone);
+      if (!EGYPTIAN_PHONE_REGEX.test(normWhatsapp)) {
+        setError('رقم الواتساب المصري غير صحيح — يجب أن يتكون من 11 رقماً.');
+        return;
+      }
+      if (!isValidEgyptianNationalId(nationalId)) {
+        setError(
+          'الرقم القومي المصري إلزامي ويجب أن يتكون من 14 رقماً صحيحاً ويبدأ بـ 2 أو 3.'
+        );
         return;
       }
       setStep(2);
@@ -138,39 +172,60 @@ export default function MarketerOnboardingModal({
     e.preventDefault();
     setError(null);
 
-    if (!payoutAccount.trim()) {
-      setError('يرجى إدخال رقم المحفظة أو حساب إنستاباي لاستلام العمولات.');
+    const normPhone = normalizeEgyptPhone(phone);
+    const normWhatsapp = normalizeEgyptPhone(whatsapp || normPhone);
+    const cleanedAccount = payoutAccount.trim();
+
+    if (!cleanedAccount || cleanedAccount.length < 6) {
+      setError('يرجى إدخال رقم المحفظة أو حساب إنستاباي أو الحساب البنكي بدقة.');
+      return;
+    }
+
+    if (
+      payoutMethod === 'VODAFONE_CASH' &&
+      !EGYPTIAN_PHONE_REGEX.test(normalizeEgyptPhone(cleanedAccount))
+    ) {
+      setError('رقم محفظة فودافون كاش يجب أن يكون رقم هاتف مصري صحيح (11 رقماً).');
+      return;
+    }
+
+    if (payoutMethod === 'BANK_TRANSFER' && !bankName.trim()) {
+      setError('يرجى إدخال اسم البنك عند اختيار التحويل البنكي.');
       return;
     }
 
     setLoading(true);
     try {
-      const generatedCode = `YZ-${name.trim().split(' ')[0].toUpperCase().slice(0, 4)}-${Math.floor(100 + Math.random() * 900)}`;
-
-      const newMarketer = await saveMarketer({
-        uid: initialData?.uid || `user-${Date.now()}`,
-        name: name.trim(),
-        email: email.trim() || `${phone.trim()}@affiliate.com`,
-        phone: phone.trim(),
-        whatsapp: whatsapp.trim() || phone.trim(),
-        avatar: initialData?.picture,
-        nationalId: nationalId.trim(),
-        city,
-        marketingChannels: selectedChannels,
-        channelLinks: channelLinks.trim(),
-        experienceLevel,
-        expectedMonthlyOrders,
-        affiliateCode: generatedCode,
-        status: 'pending',
-        payoutInfo: {
-          method: payoutMethod,
-          accountNumber: payoutAccount.trim(),
-          accountHolderName: accountHolderName.trim() || name.trim(),
-          bankName: payoutMethod === 'bank_transfer' ? bankName.trim() : undefined,
-        },
+      const res = await fetch('/api/marketers/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: name.trim(),
+          phone: normPhone,
+          whatsapp: normWhatsapp,
+          nationalId: nationalId.trim(),
+          city,
+          marketingChannels: selectedChannels,
+          channelLinks: channelLinks.trim() || undefined,
+          experienceLevel,
+          expectedMonthlyOrders,
+          payoutMethod,
+          payoutAccount:
+            payoutMethod === 'VODAFONE_CASH'
+              ? normalizeEgyptPhone(cleanedAccount)
+              : cleanedAccount,
+          payoutHolderName: accountHolderName.trim() || name.trim(),
+          payoutBankName: payoutMethod === 'BANK_TRANSFER' ? bankName.trim() : undefined,
+        }),
       });
 
-      onSuccess(newMarketer);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'تعذر تسجيل طلب الانضمام. يرجى مراجعة البيانات.');
+      }
+
+      onSuccess(data.affiliate);
     } catch (err: any) {
       setError(err?.message || 'حدث خطأ أثناء حفظ بيانات الانضمام');
     } finally {
@@ -182,13 +237,13 @@ export default function MarketerOnboardingModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
       <div
         dir="rtl"
-        className="bg-white rounded-2xl max-w-xl w-full max-h-[92vh] overflow-y-auto border border-border shadow-2xl p-6 sm:p-8 space-y-6"
+        className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto border border-border shadow-2xl p-6 sm:p-8 space-y-6"
       >
-        {/* Header */}
+        {/* Top Header */}
         <div className="flex items-start justify-between border-b border-border pb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-brand shadow-[0_0_8px_#0258ED] animate-pulse" />
+              <span className="w-2.5 h-2.5 rounded-full bg-brand shadow-[0_0_8px_#0258ED]" />
               <span className="text-[11px] font-bold uppercase tracking-wider text-brand">
                 برنامج مسوقي Ctrl YZ الرسمي
               </span>
@@ -197,10 +252,11 @@ export default function MarketerOnboardingModal({
               استكمال طلب انضمام مسوق جديد
             </h2>
             <p className="text-xs text-ink-muted mt-0.5">
-              خطوة واحدة للانضمام: نتحقق من بيانات المسوقين لضمان حماية العمولات وحقوق الملكية
+              بعد إرسال الاستمارة ستنتقل لتأكيد رمز التحقق (OTP) ثم مراجعة الإدارة لتفعيل الحساب
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-neutral-100 transition-colors"
           >
@@ -262,7 +318,7 @@ export default function MarketerOnboardingModal({
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="أحمد محمد السيد عادل"
+                placeholder="مثال: أحمد محمد محمود علي"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-border text-xs text-ink focus:outline-none focus:border-brand"
               />
             </div>
@@ -270,59 +326,56 @@ export default function MarketerOnboardingModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block mb-1 text-ink">
-                  رقم الهاتف (الأساسي) <span className="text-red-500">*</span>
+                  رقم الهاتف المصري الأساسي <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
                   required
+                  maxLength={14}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="01012345678"
+                  placeholder="010XXXXXXXX"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-border text-xs font-mono text-ink focus:outline-none focus:border-brand"
                 />
               </div>
+
               <div>
                 <label className="block mb-1 text-ink">
-                  رقم الواتساب (للإشعارات الفورية)
+                  رقم الواتساب (لاستلام رمز OTP والتأكيدات) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
+                  required
+                  maxLength={14}
                   value={whatsapp}
                   onChange={(e) => setWhatsapp(e.target.value)}
-                  placeholder="اتركه فارغاً إذا كان نفس الرقم"
+                  placeholder="010XXXXXXXX (أو اتركه مطابقاً للهاتف)"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-border text-xs font-mono text-ink focus:outline-none focus:border-brand"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block mb-1 text-ink">البريد الإلكتروني</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="marketer@gmail.com"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-border text-xs text-ink focus:outline-none focus:border-brand"
-              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block mb-1 text-ink">
-                  الرقم القومي (14 رقماً للتحقق المالي)
+                  الرقم القومي المصري (14 رقماً) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
+                  required
                   maxLength={14}
                   value={nationalId}
-                  onChange={(e) => setNationalId(e.target.value.replace(/\D/g, ''))}
-                  placeholder="298xxxxxxxxxxx"
+                  onChange={(e) => setNationalId(e.target.value.replace(/\D/g, '').slice(0, 14))}
+                  placeholder="29901011234567"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-border text-xs font-mono text-ink focus:outline-none focus:border-brand"
                 />
               </div>
 
               <div>
-                <label className="block mb-1 text-ink">المحافظة / المدينة</label>
+                <label className="block mb-1 text-ink">
+                  المحافظة / المدينة <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
@@ -337,13 +390,26 @@ export default function MarketerOnboardingModal({
               </div>
             </div>
 
+            <div>
+              <label className="block mb-1 text-ink">
+                البريد الإلكتروني الموثّق عبر Google
+              </label>
+              <input
+                type="email"
+                value={email}
+                readOnly
+                disabled
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border text-xs font-mono text-ink-muted bg-neutral-100 cursor-not-allowed"
+              />
+            </div>
+
             <div className="pt-2">
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="w-full py-3 bg-ink hover:bg-neutral-800 text-white font-bold text-xs rounded-xl shadow-md transition-all"
+                className="w-full py-3 bg-ink hover:bg-neutral-800 text-white font-bold text-xs rounded-xl shadow-md transition"
               >
-                المتابعة إلى قنوات التسويق والخبرة &larr;
+                المتابعة إلى قنوات التسويق &larr;
               </button>
             </div>
           </div>
@@ -354,30 +420,33 @@ export default function MarketerOnboardingModal({
           <div className="space-y-4 text-xs font-semibold text-neutral-700">
             <div>
               <label className="block mb-2 text-ink">
-                أين تنوي تسويق منتجات Ctrl YZ؟ (اختر كل ما ينطبق) <span className="text-red-500">*</span>
+                أين ستقوم بتسويق منتجات Ctrl YZ؟ (اختر قناة أو أكثر){' '}
+                <span className="text-red-500">*</span>
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {MARKETING_CHANNELS.map((ch) => {
-                  const isChecked = selectedChannels.includes(ch);
+                  const active = selectedChannels.includes(ch);
                   return (
                     <button
                       key={ch}
                       type="button"
                       onClick={() => toggleChannel(ch)}
-                      className={`p-2.5 rounded-xl border text-right flex items-center justify-between text-xs transition ${
-                        isChecked
+                      className={`p-2.5 rounded-xl border text-right flex items-center gap-2 transition ${
+                        active
                           ? 'bg-blue-50 border-brand text-brand font-bold'
-                          : 'bg-neutral-50 border-border text-neutral-600 hover:bg-white'
+                          : 'bg-neutral-50 border-border text-neutral-600 hover:bg-neutral-100'
                       }`}
                     >
-                      <span>{ch}</span>
                       <span
-                        className={`w-4 h-4 rounded flex items-center justify-center text-[10px] ${
-                          isChecked ? 'bg-brand text-white' : 'border border-neutral-300'
+                        className={`w-4 h-4 rounded-md border flex items-center justify-center text-[10px] ${
+                          active
+                            ? 'bg-brand border-brand text-white'
+                            : 'bg-white border-neutral-300'
                         }`}
                       >
-                        {isChecked ? '✓' : ''}
+                        {active ? '✓' : ''}
                       </span>
+                      <span className="truncate">{ch}</span>
                     </button>
                   );
                 })}
@@ -386,42 +455,44 @@ export default function MarketerOnboardingModal({
 
             <div>
               <label className="block mb-1 text-ink">
-                رابط صفحتك أو قناتك التسويقية (فيسبوك، تيك توك، إنستغرام، تليجرام)
+                روابط صفحاتك أو قنواتك الإعلانية (اختياري)
               </label>
-              <input
-                type="url"
+              <textarea
+                rows={2}
                 value={channelLinks}
                 onChange={(e) => setChannelLinks(e.target.value)}
-                placeholder="https://facebook.com/your_page_or_tiktok"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-border text-xs text-ink focus:outline-none focus:border-brand"
+                placeholder="https://facebook.com/yourpage أو حساب تيك توك / إنستغرام..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border text-xs font-mono text-ink focus:outline-none focus:border-brand resize-none"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block mb-1 text-ink">مستوى خبرتك السابقة في التسويق بالعمولة</label>
+                <label className="block mb-1 text-ink">مستوى الخبرة في التسويق بالعمولة</label>
                 <select
                   value={experienceLevel}
-                  onChange={(e) => setExperienceLevel(e.target.value as any)}
+                  onChange={(e) =>
+                    setExperienceLevel(e.target.value as 'beginner' | 'intermediate' | 'expert')
+                  }
                   className="w-full px-3.5 py-2.5 rounded-xl border border-border text-xs text-ink bg-white focus:outline-none focus:border-brand"
                 >
-                  <option value="beginner">مبتدئ (أول تجربة لي في الأفلييت)</option>
-                  <option value="intermediate">متوسط (لدي خبرة وأبيع من قبل)</option>
-                  <option value="expert">محترف (أدير حملات إعلانية ممولة ومبيعات يومية)</option>
+                  <option value="beginner">مبتدئ (سأبدأ أولى حملاتي الآن)</option>
+                  <option value="intermediate">متوسط (سبق لي البيع عبر السوشيال ميديا)</option>
+                  <option value="expert">محترف (إعلانات ممولة وميديا باينج يومي)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block mb-1 text-ink">المبيعات المتوقعة شهرياً</label>
+                <label className="block mb-1 text-ink">متوسط الطلبات المتوقعة شهرياً</label>
                 <select
                   value={expectedMonthlyOrders}
                   onChange={(e) => setExpectedMonthlyOrders(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-border text-xs text-ink bg-white focus:outline-none focus:border-brand"
                 >
-                  <option value="under-20">أقل من 20 قطعة شهرياً</option>
-                  <option value="20-50">20 - 50 قطعة شهرياً</option>
-                  <option value="50-100">50 - 100 قطعة شهرياً</option>
-                  <option value="over-100">أكثر من 100 قطعة شهرياً (VIP Tier)</option>
+                  <option value="10-20">10 - 20 قطعة</option>
+                  <option value="20-50">20 - 50 قطعة</option>
+                  <option value="50-150">50 - 150 قطعة</option>
+                  <option value="150+">أكثر من 150 قطعة شهرياً</option>
                 </select>
               </div>
             </div>
@@ -455,9 +526,9 @@ export default function MarketerOnboardingModal({
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => setPayoutMethod('vodafone_cash')}
+                  onClick={() => setPayoutMethod('VODAFONE_CASH')}
                   className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1.5 transition ${
-                    payoutMethod === 'vodafone_cash'
+                    payoutMethod === 'VODAFONE_CASH'
                       ? 'bg-red-50 border-red-500 text-red-700 font-bold'
                       : 'bg-neutral-50 border-border text-neutral-600'
                   }`}
@@ -468,9 +539,9 @@ export default function MarketerOnboardingModal({
 
                 <button
                   type="button"
-                  onClick={() => setPayoutMethod('instapay')}
+                  onClick={() => setPayoutMethod('INSTAPAY')}
                   className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1.5 transition ${
-                    payoutMethod === 'instapay'
+                    payoutMethod === 'INSTAPAY'
                       ? 'bg-purple-50 border-purple-500 text-purple-700 font-bold'
                       : 'bg-neutral-50 border-border text-neutral-600'
                   }`}
@@ -481,9 +552,9 @@ export default function MarketerOnboardingModal({
 
                 <button
                   type="button"
-                  onClick={() => setPayoutMethod('bank_transfer')}
+                  onClick={() => setPayoutMethod('BANK_TRANSFER')}
                   className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1.5 transition ${
-                    payoutMethod === 'bank_transfer'
+                    payoutMethod === 'BANK_TRANSFER'
                       ? 'bg-blue-50 border-blue-500 text-blue-700 font-bold'
                       : 'bg-neutral-50 border-border text-neutral-600'
                   }`}
@@ -496,9 +567,9 @@ export default function MarketerOnboardingModal({
 
             <div>
               <label className="block mb-1 text-ink">
-                {payoutMethod === 'vodafone_cash'
-                  ? 'رقم محفظة فودافون كاش *'
-                  : payoutMethod === 'instapay'
+                {payoutMethod === 'VODAFONE_CASH'
+                  ? 'رقم محفظة فودافون كاش (11 رقماً) *'
+                  : payoutMethod === 'INSTAPAY'
                   ? 'عنوان أو معرف إنستاباي (IPA / Mobile) *'
                   : 'رقم الحساب البنكي أو الآيبان (IBAN) *'}
               </label>
@@ -508,9 +579,9 @@ export default function MarketerOnboardingModal({
                 value={payoutAccount}
                 onChange={(e) => setPayoutAccount(e.target.value)}
                 placeholder={
-                  payoutMethod === 'vodafone_cash'
+                  payoutMethod === 'VODAFONE_CASH'
                     ? '010XXXXXXXX'
-                    : payoutMethod === 'instapay'
+                    : payoutMethod === 'INSTAPAY'
                     ? 'name@instapay أو 01xxxxxxxxx'
                     : 'EG0000000000000000000000000'
                 }
@@ -530,11 +601,14 @@ export default function MarketerOnboardingModal({
                 />
               </div>
 
-              {payoutMethod === 'bank_transfer' && (
+              {payoutMethod === 'BANK_TRANSFER' && (
                 <div>
-                  <label className="block mb-1 text-ink">اسم البنك</label>
+                  <label className="block mb-1 text-ink">
+                    اسم البنك <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
+                    required
                     value={bankName}
                     onChange={(e) => setBankName(e.target.value)}
                     placeholder="مثال: البنك الأهلي المصري"
@@ -547,7 +621,7 @@ export default function MarketerOnboardingModal({
             <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900 text-[11px] leading-relaxed flex items-center gap-2">
               <ShieldCheck size={16} className="text-blue-600 flex-shrink-0" />
               <span>
-                يتم إرسال طلب انضمامك مباشرة إلى إدارة المنصة لمراجعته واعتماده، وستتمكن فور الإرسال من تصفح دليل المسوق الكامل وكيفية العمل والربح.
+                سيتم إنشاء كود إحالة إنجليزي فريد لك، ثم نقلك فوراً لخطوة التحقق برمز OTP قبل مراجعة واعتماد الإدارة.
               </span>
             </div>
 
@@ -564,7 +638,7 @@ export default function MarketerOnboardingModal({
                 disabled={loading}
                 className="w-2/3 py-3 bg-brand hover:bg-brand-hover text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50"
               >
-                {loading ? 'جاري إرسال الطلب...' : 'إرسال طلب الانضمام واعتماد الحساب ✓'}
+                {loading ? 'جاري تسجيل الطلب...' : 'إرسال البيانات والانتقال للتحقق (OTP) ✓'}
               </button>
             </div>
           </form>

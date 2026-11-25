@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle2, Truck, ShieldCheck } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { createOrder, getShippingRates } from '@/lib/dataService';
-import type { GovernorateShipping } from '@/lib/types';
+import { useSettings } from '@/contexts/SettingsContext';
+import { createOrder } from '@/lib/dataService';
 
 interface CheckoutScreenProps {
   onBack: () => void;
@@ -20,10 +20,11 @@ export default function CheckoutScreen({
 }: CheckoutScreenProps) {
   const { cart, cartTotal, clearCart } = useCart();
   const { t, locale } = useLanguage();
+  const { shippingRates: governorates, currencySymbol } = useSettings();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
-  const [governorates, setGovernorates] = useState<GovernorateShipping[]>([]);
-  const [selectedGovId, setSelectedGovId] = useState<string>('cairo');
+  const [selectedGovId, setSelectedGovId] = useState<string>('');
 
   const [form, setForm] = useState({
     name: '',
@@ -35,13 +36,10 @@ export default function CheckoutScreen({
   });
 
   useEffect(() => {
-    getShippingRates().then((rates) => {
-      setGovernorates(rates);
-      if (rates.length > 0) {
-        setSelectedGovId(rates[0].id);
-      }
-    });
-  }, []);
+    if (governorates.length > 0 && !governorates.some((g) => g.id === selectedGovId)) {
+      setSelectedGovId(governorates[0].id);
+    }
+  }, [governorates, selectedGovId]);
 
   const currentGov = governorates.find((g) => g.id === selectedGovId) || governorates[0];
   const shippingFee = currentGov ? currentGov.fee : 45;
@@ -54,32 +52,34 @@ export default function CheckoutScreen({
   };
 
   const handleSubmit = async () => {
-    if (!form.name || !form.phone || !form.address) return;
+    if (!form.name || !form.phone || !form.address) {
+      setError(
+        locale === 'ar'
+          ? 'يرجى استكمال الاسم ورقم الهاتف والعنوان التفصيلي'
+          : 'Please complete your name, phone number, and delivery address'
+      );
+      return;
+    }
 
     setLoading(true);
+    setError(null);
     try {
-      // Check if user came from an affiliate referral link
-      const affiliateRef = typeof window !== 'undefined' ? localStorage.getItem('ctrl_yz_affiliate_ref') : null;
-
+      // Server reads verified 30-day ctrl_ref HttpOnly cookie & computes all prices/commissions/shipping authoritatively
       const orderData = {
-        affiliateId: affiliateRef || undefined,
-        customerName: form.name,
-        customerPhone: form.phone,
-        customerPhone2: form.phone2,
-        governorate: currentGov ? (locale === 'ar' ? currentGov.governorate_ar : currentGov.governorate_en) : 'القاهرة',
-        customerCity: form.city || (currentGov ? currentGov.governorate_ar : 'القاهرة'),
-        customerAddress: form.address,
-        notes: form.notes,
-        shippingFee,
+        source: 'STOREFRONT' as const,
+        customerName: form.name.trim(),
+        customerPhone: form.phone.trim(),
+        customerAltPhone: form.phone2.trim() || undefined,
+        governorate: currentGov ? currentGov.governorate_ar : 'القاهرة',
+        customerCity: form.city.trim() || (currentGov ? currentGov.governorate_ar : 'القاهرة'),
+        customerAddress: form.address.trim(),
+        notes: form.notes.trim() || undefined,
         items: cart.map((item: any) => ({
           productId: item.productId || item.id,
-          name: getName(item),
-          price: item.price,
-          wholesalePrice: Math.round(item.price * 0.65),
-          commission: Math.round(item.price * 0.35),
-          quantity: item.quantity,
-          size: item.size || 'Standard',
-          image: item.image || '',
+          variantId: typeof item.variantId === 'string' ? item.variantId : undefined,
+          size: item.size || 'M',
+          color: item.color || '',
+          quantity: Number(item.quantity) || 1,
         })),
       };
 
@@ -87,8 +87,15 @@ export default function CheckoutScreen({
       const newOrderNum = result.orderNumber;
       setOrderNumber(newOrderNum);
       clearCart();
-    } catch (error) {
-      console.error('Error placing order:', error);
+    } catch (err: unknown) {
+      console.error('Error placing order:', err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : locale === 'ar'
+          ? 'تعذر تأكيد الطلب، يرجى مراجعة البيانات والمحاولة مرة أخرى'
+          : 'Failed to place order. Please review your details and try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -136,9 +143,14 @@ export default function CheckoutScreen({
       <div className="px-5 pt-12 pb-3 flex items-center gap-3 bg-white border-b border-border">
         <button
           onClick={onBack}
+          aria-label={locale === 'ar' ? 'رجوع' : 'Back'}
           className="w-9 h-9 rounded-lg bg-neutral-50 border border-border flex items-center justify-center hover:bg-neutral-100 transition-colors"
         >
-          <ArrowLeft size={18} strokeWidth={1.6} className="text-neutral-700" />
+          <ArrowLeft
+            size={18}
+            strokeWidth={1.6}
+            className={`text-neutral-700 ${locale === 'ar' ? 'rotate-180' : ''}`}
+          />
         </button>
         <h1 className="text-base font-bold text-ink">{t('cart.checkout')}</h1>
       </div>
@@ -156,23 +168,28 @@ export default function CheckoutScreen({
                   {getName(item)} (×{item.quantity})
                 </span>
                 <span className="font-mono font-semibold text-ink num-tabular">
-                  {((item.salePrice || item.price) * item.quantity).toFixed(2)} ج.م
+                  {((item.salePrice || item.price) * item.quantity).toFixed(2)} {currencySymbol}
                 </span>
               </div>
             ))}
             <div className="flex justify-between items-center text-neutral-500 pt-1 border-t border-border">
               <span>{locale === 'ar' ? 'تكلفة الشحن:' : 'Shipping:'}</span>
-              <span className="font-mono text-ink num-tabular">{shippingFee} ج.م</span>
+              <span className="font-mono text-ink num-tabular">{shippingFee} {currencySymbol}</span>
             </div>
             <div className="flex justify-between items-center text-sm font-bold text-ink pt-1 border-t border-border">
               <span>{locale === 'ar' ? 'الإجمالي عند الاستلام (COD):' : 'Total (COD):'}</span>
-              <span className="font-mono text-ink num-tabular">{finalTotal.toFixed(2)} ج.م</span>
+              <span className="font-mono text-ink num-tabular">{finalTotal.toFixed(2)} {currencySymbol}</span>
             </div>
           </div>
         </div>
 
         {/* Shipping Form */}
         <div className="bg-white rounded-xl p-4 border border-border space-y-3">
+          {error && (
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+              {error}
+            </div>
+          )}
           <h2 className="text-xs font-bold text-ink pb-2 border-b border-border">
             {locale === 'ar' ? 'عنوان وبيانات استلام الشحنة' : 'Delivery Details'}
           </h2>
@@ -230,7 +247,7 @@ export default function CheckoutScreen({
               >
                 {governorates.map((gov) => (
                   <option key={gov.id} value={gov.id}>
-                    {locale === 'ar' ? gov.governorate_ar : gov.governorate_en} - ({gov.fee} ج.م | {gov.deliveryTime})
+                    {locale === 'ar' ? gov.governorate_ar : gov.governorate_en} - ({gov.fee} {currencySymbol} | {gov.deliveryTime})
                   </option>
                 ))}
               </select>

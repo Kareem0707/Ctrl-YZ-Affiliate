@@ -7,27 +7,50 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:migrate": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.1",
+    "@prisma/adapter-neon": "^6.19.3",
+    "@prisma/client": "^6.19.3",
+    "@vercel/blob": "^2.9.0",
     "autoprefixer": "^10.6.2",
-    "firebase": "^13.3.0",
     "framer-motion": "^14.14.0",
+    "google-auth-library": "^11.3.4",
+    "jose": "^6.2.18",
     "lucide-react": "^1.73.0",
+    "nanoid": "^6.0.2",
     "next": "^14.2.35",
     "postcss": "^8.5.33",
+    "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "ws": "^8.23.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@types/ws": "^8.18.2",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.35",
+    "prisma": "^6.19.3",
+    "tsx": "^4.23.15",
     "typescript": "^5.4.5"
   }
 }
